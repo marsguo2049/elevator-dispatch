@@ -48,6 +48,12 @@ test("simulator provides a non-blocking model view", () => {
   assert.match(html, /id="viewTabs"/);
 });
 
+test("desktop sidebar remains independently scrollable within one viewport", () => {
+  assert.match(html, /#app \{ display:flex; height:100dvh; \}/);
+  assert.match(html, /#panel \{ width:380px;[^}]*overflow-y:auto/);
+  assert.match(html, /@media \(max-width:760px\)[\s\S]*#app \{ height:auto; min-height:100dvh/);
+});
+
 test("simulator presents core live metrics as a dashboard", () => {
   assert.match(html, /运行仪表盘/);
   assert.match(html, /id="gWaiting"/);
