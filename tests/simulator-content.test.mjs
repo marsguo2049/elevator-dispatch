@@ -17,6 +17,18 @@ test("simulator exposes reproducible paired comparison", () => {
   assert.match(html, /运行同样本 A\/B 对比/);
 });
 
+test("simulator exposes the single-elevator and group-control learning levels", () => {
+  assert.match(html, /Level 1 · 单梯/);
+  assert.match(html, /Level 2 · 群控/);
+  assert.match(html, /P95 等待/);
+  assert.match(html, /totalDistance/);
+});
+
+test("opposite-direction calls are released after an incompatible stop", () => {
+  assert.match(html, /该车本次运行方向无法接走的乘客必须释放/);
+  assert.match(html, /for\(const p of candidates\) p\.assigned = -1/);
+});
+
 test("inline simulator script parses", () => {
   const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
   assert.equal(scripts.length, 1);
