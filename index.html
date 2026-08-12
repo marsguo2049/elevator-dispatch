@@ -64,6 +64,8 @@
   .algoStep b { display:block; color:#d9eaff; font-size:11px; }
   .algoStep span { display:block; margin-top:4px; color:#8ea5c3; font-size:10px; line-height:1.5; }
   .modelNote { margin-top:11px; color:#7f96b4; font-size:10px; line-height:1.5; }
+  .formula { margin-top:6px; padding:7px 8px; border-radius:7px; background:#081424; color:#9fd8ff; font-family:"SFMono-Regular",Consolas,monospace; font-size:10px; line-height:1.45; overflow-x:auto; }
+  .experimentStatus { margin-top:10px; color:#8ea5c3; font-size:10px; font-variant-numeric:tabular-nums; }
   #toast { position:absolute; left:50%; bottom:24px; transform:translateX(-50%); padding:8px 14px; border:1px solid #3b5879; border-radius:999px; background:rgba(15,28,48,.94); font-size:12px; opacity:0; transition:opacity .25s; pointer-events:none; }
   @media (max-width:760px) { body { overflow:auto; } #app { height:auto; min-height:100dvh; flex-direction:column; } #canvasWrap { height:49svh; min-height:320px; flex:none; } #panel { width:100%; overflow:visible; padding:16px; border-left:0; border-top:1px solid #213655; } h1 { font-size:23px; } .card { padding:14px; } }
 </style>
@@ -83,7 +85,8 @@
       <button class="viewTab" data-view="model">模型与算法</button>
     </div>
 
-    <div id="dashboardView" class="card dash">
+    <div id="simulatorView">
+    <div class="card dash">
       <h2>运行仪表盘</h2>
       <div class="gauges">
         <div class="gauge" id="gWaiting" style="--accent:#ffd166"><div><strong id="stWaiting">0</strong><span>候梯人数</span></div></div>
@@ -95,17 +98,6 @@
         <div class="mini"><span>最长等待</span><strong id="stMaxWait">–</strong></div>
         <div class="mini"><span>仿真时间</span><strong id="stClock">00:00</strong></div>
       </div>
-    </div>
-
-    <div id="modelView" class="card" hidden>
-      <h2>模型与算法</h2>
-      <div class="algorithm">
-        <div class="algoStep"><b>1 · 客流生成</b><span>按当前模式产生起点与目的地；日常场景中 80% 是大厅与办公楼层之间的出行。</span></div>
-        <div class="algoStep"><b>2 · 呼叫分组与派梯</b><span>按“楼层 + 方向”合并候梯请求，估计每台车到达该楼层的时间，再选出更合适的车。</span></div>
-        <div class="algoStep"><b>3 · 到站服务</b><span>方向一致、未满载的乘客可上任一到站电梯；空车在中间楼层可按候梯方向换向。</span></div>
-        <div class="algoStep"><b>4 · 目标权衡</b><span>响应优先更快接人；节能优先减少新增停靠和空载移动。两者均为规则式启发式，不是全局最优求解。</span></div>
-      </div>
-      <p class="modelNote">切换到此处不会暂停或重置左侧正在运行的仿真。</p>
     </div>
 
     <div class="card">
@@ -160,9 +152,9 @@
     </div>
 
     <div class="card experiment">
-      <h2 id="compareTitle">同样本策略对比 · 10 分钟</h2>
-      <p>以当前楼层、台数、客流和轿厢规格，分别运行相同的固定时长。两种目标使用完全相同的客流样本。</p>
-      <div class="row" style="margin-top:11px;"><label for="compareDuration">实验时长</label>
+      <h2 id="compareTitle">策略实验 · 10 分钟</h2>
+      <p>选择当前目标后开始运行。实验会在主画布中实时进行，到达设定时长后自动暂停。切换目标并重新运行，可在下表比较同样本结果。</p>
+      <div class="row" style="margin-top:11px;"><label for="compareDuration">模拟时长</label>
         <select id="compareDuration">
           <option value="5">5 分钟 · 快速</option>
           <option value="10" selected>10 分钟 · 推荐</option>
@@ -172,7 +164,8 @@
         </select>
       </div>
       <div class="row" id="customDurationRow" hidden><label for="customDuration">自定义时长</label><span><input class="minutesInput" id="customDuration" type="number" min="1" max="120" value="10"> 分钟</span></div>
-      <button class="btn primary" id="btnCompare">运行 10 分钟对比</button>
+      <button class="btn primary" id="btnCompare">开始 10 分钟实验</button>
+      <p class="experimentStatus" id="experimentStatus">尚未开始实验 · 时间倍速只影响观看速度</p>
       <div class="resultGrid" id="compareResult" hidden>
         <span class="resultHead">指标</span><span class="resultHead response">响应优先</span><span class="resultHead energy">节能优先</span>
         <span>平均等待</span><span id="cmpWaitResponse">–</span><span id="cmpWaitEnergy">–</span>
@@ -187,6 +180,20 @@
     <div class="card">
       <h2>读图提示</h2>
       <p class="hint">黄色圆点是候梯乘客，旁边的 → 楼层表示目的地；绿色圆点表示轿厢内乘客。每台车都可接走方向一致且未满载的候梯者。</p>
+    </div>
+    </div>
+
+    <div id="modelView" hidden>
+      <div class="card">
+        <h2>模型与算法</h2>
+        <div class="algorithm">
+          <div class="algoStep"><b>需求生成</b><span>乘客到达间隔服从泊松过程；λ 是到达率（人/分）。</span><div class="formula">Δt = −ln(1−U) / (λ / 60)</div></div>
+          <div class="algoStep"><b>预计到达时间</b><span>以路线距离、计划停靠和当前载客量估计每台车对一个楼层请求的响应代价。</span><div class="formula">T̂ₑ(f) = d_route / v + n_target(t_door + c) + n_rider·w</div></div>
+          <div class="algoStep"><b>派梯与容量约束</b><span>对每组“楼层 + 方向”请求，选择预计时间最小的轿厢；同时满足载客数不超过 C。</span><div class="formula">e* = arg minₑ T̂ₑ(f), &nbsp; ridersₑ ≤ C</div></div>
+          <div class="algoStep"><b>两种目标</b><span>响应优先降低接人时间；节能优先给新增停靠与逆向请求更高代价，以减少距离和停靠。</span><div class="formula">J_response ≈ T̂ₑ(f) &nbsp; | &nbsp; J_energy ≈ T̂ₑ(f) + α·stops + β·empty_distance</div></div>
+        </div>
+        <p class="modelNote">现实参数对应：到达率 λ、速度 v、开门时间 t_door、轿厢容量 C、楼层数 F。切换到此处不会暂停或重置左侧正在运行的仿真；这里使用规则式启发式，适合用于解释和比较，不代表真实楼宇控制器的全局最优结果。</p>
+      </div>
     </div>
   </div>
 </div>
@@ -493,6 +500,7 @@ function loop(ts){
     const reEvery = P.objective==='eff' ? P.reassignEvery*1.6 : P.reassignEvery; // 效率模式：攒批再分配
     if(S.sinceReassign >= reEvery){ S.sinceReassign=0; reassign(); }
     for(const e of S.elevators) stepElevator(e, dt);
+    if(experiment.active && S.t >= experiment.duration) finishExperiment();
   }
   draw();
   updateStats();
@@ -616,49 +624,39 @@ function updateStats(){
   document.getElementById('gWaiting').style.setProperty('--p', Math.min(100, waiting*12)+'%');
   document.getElementById('gWait').style.setProperty('--p', aw===null ? '0%' : Math.min(100, aw/0.6)+'%');
   document.getElementById('gDone').style.setProperty('--p', Math.min(100, S.servedTrips.length*5)+'%');
+  const status = document.getElementById('experimentStatus');
+  if(experiment.active){
+    status.textContent = '实验进行中 · '+fmtClock(Math.min(S.t,experiment.duration))+' / '+fmtClock(experiment.duration)+' · '+(experiment.objective==='wait'?'响应优先':'节能优先');
+  } else if(experimentResults.wait || experimentResults.eff){
+    status.textContent = '实验完成 · 已记录 '+experiment.minutes+' 分钟结果，可导出报告';
+  }
 }
 
-/* ================= 固定时长策略实验 ================= */
-function runFixedScenario(objective, minutes){
-  const liveState = S;
-  const liveObjective = P.objective;
-  P.objective = objective;
-  reset(); // 每次从相同随机种子开始，确保两种目标面对同一批客流。
-  const horizon = minutes*60, dt = 0.2;
-  for(let tick=0; tick<horizon/dt; tick++){
-    S.t += dt;
-    const decay = Math.pow(0.5, dt/60);
-    for(let i=0;i<S.floorDemand.length;i++) S.floorDemand[i] *= decay;
-    spawn(dt);
-    S.sinceReassign += dt;
-    const reEvery = P.objective==='eff' ? P.reassignEvery*1.6 : P.reassignEvery;
-    if(S.sinceReassign>=reEvery){ S.sinceReassign=0; reassign(); }
-    for(const e of S.elevators) stepElevator(e, dt);
-  }
+/* ================= 前台策略实验 ================= */
+let experiment = { active:false, duration:0, minutes:0, objective:null };
+let experimentResults = { config:null, minutes:0, wait:null, eff:null };
+
+function summarizeExperiment(){
   const mean = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
   const p95 = S.servedWaits.length
     ? [...S.servedWaits].sort((a,b)=>a-b)[Math.max(0, Math.ceil(S.servedWaits.length*.95)-1)]
     : null;
-  const result = { wait:mean(S.servedWaits), p95, done:S.servedTrips.length, distance:S.totalDistance, stops:S.totalStops };
-  S = liveState;
-  P.objective = liveObjective;
-  return result;
+  return { wait:mean(S.servedWaits), p95, done:S.servedTrips.length, distance:S.totalDistance, stops:S.totalStops };
 }
 
-function fmtResult(value, digits=1){ return value===null ? '–' : value.toFixed(digits); }
+function fmtResult(value, digits=1){ return typeof value==='number' ? value.toFixed(digits) : '–'; }
 function showComparison(response, energy){
   const rows = [
     ['cmpWait','wait',' s',1], ['cmpP95','p95',' s',1], ['cmpDone','done','',0],
     ['cmpDistance','distance',' 层',1], ['cmpStops','stops','',0],
   ];
   for(const [id,key,unit,digits] of rows){
-    document.getElementById(id+'Response').textContent = fmtResult(response[key], digits)+unit;
-    document.getElementById(id+'Energy').textContent = fmtResult(energy[key], digits)+unit;
+    document.getElementById(id+'Response').textContent = fmtResult(response?.[key], digits)+unit;
+    document.getElementById(id+'Energy').textContent = fmtResult(energy?.[key], digits)+unit;
   }
   document.getElementById('compareResult').hidden = false;
 }
 
-let latestExperiment = null;
 function getExperimentMinutes(){
   const selected = document.getElementById('compareDuration').value;
   if(selected !== 'custom') return +selected;
@@ -668,38 +666,53 @@ function syncExperimentDuration(){
   const custom = document.getElementById('compareDuration').value==='custom';
   document.getElementById('customDurationRow').hidden = !custom;
   const minutes = getExperimentMinutes();
-  document.getElementById('compareTitle').textContent = '同样本策略对比 · '+minutes+' 分钟';
-  document.getElementById('btnCompare').textContent = '运行 '+minutes+' 分钟对比';
+  document.getElementById('compareTitle').textContent = '策略实验 · '+minutes+' 分钟';
+  if(!experiment.active) document.getElementById('btnCompare').textContent = '开始 '+minutes+' 分钟实验';
 }
-function runComparison(){
+
+function experimentConfig(minutes){
+  return JSON.stringify({ minutes, floors:P.floors, elevators:P.nElev, pattern:P.pattern, rate:P.ratePerMin, capacity:P.capacity });
+}
+function startExperiment(){
+  if(experiment.active) return;
   const btn = document.getElementById('btnCompare');
   const minutes = getExperimentMinutes();
-  btn.disabled = true; btn.textContent = '正在运行同样本实验…';
-  requestAnimationFrame(()=>{
-    const response = runFixedScenario('wait', minutes);
-    const energy = runFixedScenario('eff', minutes);
-    showComparison(response, energy);
-    latestExperiment = { minutes, response, energy, config:{ floors:P.floors, elevators:P.nElev, pattern:P.pattern, rate:P.ratePerMin, capacity:P.capacity } };
-    document.getElementById('btnExport').disabled = false;
-    btn.disabled = false; btn.textContent = '重新运行 '+minutes+' 分钟对比';
-    toast('对比完成：两种目标使用相同客流样本');
-  });
+  const config = experimentConfig(minutes);
+  if(experimentResults.config !== config) experimentResults = { config, minutes, wait:null, eff:null };
+  reset();
+  S.paused = false;
+  experiment = { active:true, duration:minutes*60, minutes, objective:P.objective };
+  btn.disabled = true; btn.textContent = '实验运行中…';
+  document.getElementById('btnExport').disabled = true;
+  document.getElementById('btnPause').textContent = '⏸ 暂停';
+  toast('实验开始：主画布正在实时运行');
+}
+function finishExperiment(){
+  experiment.active = false;
+  S.paused = true;
+  experimentResults[experiment.objective] = summarizeExperiment();
+  showComparison(experimentResults.wait, experimentResults.eff);
+  document.getElementById('btnCompare').disabled = false;
+  document.getElementById('btnCompare').textContent = '重新开始 '+experiment.minutes+' 分钟实验';
+  document.getElementById('btnExport').disabled = !(experimentResults.wait || experimentResults.eff);
+  toast('实验完成：可切换目标再次运行或导出报告');
 }
 
 function exportMarkdown(){
-  if(!latestExperiment) return;
-  const x = latestExperiment;
-  const pattern = {random:'日常客流（80% 大厅往返）', morning:'早高峰（上行）', evening:'晚高峰（下行）', lunch:'午间双向'}[x.config.pattern];
-  const line = (label,key,unit='',digits=1) => '| '+label+' | '+fmtResult(x.response[key],digits)+unit+' | '+fmtResult(x.energy[key],digits)+unit+' |';
+  if(!(experimentResults.wait || experimentResults.eff)) return;
+  const x = experimentResults;
+  const config = JSON.parse(x.config);
+  const pattern = {random:'日常客流（80% 大厅往返）', morning:'早高峰（上行）', evening:'晚高峰（下行）', lunch:'午间双向'}[config.pattern];
+  const line = (label,key,unit='',digits=1) => '| '+label+' | '+fmtResult(x.wait?.[key],digits)+unit+' | '+fmtResult(x.eff?.[key],digits)+unit+' |';
   const markdown = [
     '# City2049 电梯调度实验结果', '',
     '## 实验设置',
     '- 实验时长：'+x.minutes+' 分钟',
-    '- 电梯数量：'+x.config.elevators+' 台',
-    '- 楼层数：'+x.config.floors+' 层',
+    '- 电梯数量：'+config.elevators+' 台',
+    '- 楼层数：'+config.floors+' 层',
     '- 客流模式：'+pattern,
-    '- 到达率：'+x.config.rate+' 人/分',
-    '- 轿厢规格：'+x.config.capacity+' 人',
+    '- 到达率：'+config.rate+' 人/分',
+    '- 轿厢规格：'+config.capacity+' 人',
     '- 样本控制：两种策略从相同随机种子和相同客流序列开始。', '',
     '## 结果',
     '| 指标 | 响应优先 | 节能优先 |',
@@ -727,14 +740,17 @@ function syncLevelUI(){
   document.querySelectorAll('#elevSeg [data-n]').forEach(b=>b.classList.toggle('on', +b.dataset.n===P.nElev));
 }
 function invalidateComparison(){
-  latestExperiment = null;
+  experiment.active = false;
+  experimentResults = { config:null, minutes:0, wait:null, eff:null };
   document.getElementById('compareResult').hidden = true;
   document.getElementById('btnExport').disabled = true;
+  document.getElementById('btnCompare').disabled = false;
+  document.getElementById('experimentStatus').textContent = '尚未开始实验 · 时间倍速只影响观看速度';
 }
 document.getElementById('viewTabs').addEventListener('click', e=>{
   if(!e.target.dataset.view) return;
   const model = e.target.dataset.view==='model';
-  document.getElementById('dashboardView').hidden = model;
+  document.getElementById('simulatorView').hidden = model;
   document.getElementById('modelView').hidden = !model;
   [...e.currentTarget.children].forEach(b=>b.classList.toggle('on', b===e.target));
 });
@@ -751,7 +767,6 @@ document.getElementById('pattern').addEventListener('change', e=>{ P.pattern=e.t
 document.getElementById('objSeg').addEventListener('click', e=>{
   if(!e.target.dataset.n) return;
   P.objective = e.target.dataset.n;
-  invalidateComparison();
   [...e.currentTarget.children].forEach(b=>b.classList.toggle('on', b===e.target));
   const energy = P.objective==='eff';
   document.getElementById('objHint').textContent = energy
@@ -779,7 +794,7 @@ document.getElementById('btnPause').addEventListener('click', e=>{
   e.target.textContent = S.paused ? '▶ 继续' : '⏸ 暂停';
 });
 document.getElementById('btnReset').addEventListener('click', ()=>{ reset(); invalidateComparison(); toast('已重置'); });
-document.getElementById('btnCompare').addEventListener('click', runComparison);
+document.getElementById('btnCompare').addEventListener('click', startExperiment);
 document.getElementById('btnExport').addEventListener('click', exportMarkdown);
 
 reset();
