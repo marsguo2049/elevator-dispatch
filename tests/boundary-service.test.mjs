@@ -67,3 +67,19 @@ test("an elevator arriving upward at the top floor immediately boards downward p
   assert.equal(elevator.dir, -1);
   assert.equal(elevator.riders.length, 1);
 });
+
+test("a full elevator never boards beyond its configured capacity", () => {
+  const sim = loadSimulator();
+  sim.P.floors = 14; sim.P.nElev = 1; sim.P.capacity = 2; sim.P.park = false; sim.reset();
+  const state = sim.getState();
+  const elevator = state.elevators[0];
+  elevator.y = 1; elevator.dir = -1; elevator.targets.add(1);
+  elevator.riders.push({ ...waitingPassenger(5, 8), state: "ride" });
+  state.passengers.push(waitingPassenger(1, 6), waitingPassenger(1, 9));
+
+  sim.stepElevator(elevator, 0.1);
+
+  assert.equal(elevator.riders.length, 2);
+  assert.equal(state.passengers.filter(p => p.state === "ride").length, 1);
+  assert.equal(state.passengers.filter(p => p.state === "wait").length, 1);
+});
