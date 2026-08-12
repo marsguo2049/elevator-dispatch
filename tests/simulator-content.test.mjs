@@ -5,9 +5,9 @@ import { readFile } from "node:fs/promises";
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 
 test("simulator leads with a concise City2049 purpose", () => {
-  assert.match(html, /Vertical Flow · Elevator Group Control · City2049/);
+  assert.match(html, /Elevator Group · City2049/);
   assert.match(html, /CITY2049 · URBAN SYSTEMS/);
-  assert.match(html, /Elevator Group Control · 群控电梯实时仿真/);
+  assert.match(html, /Group Control · 群控电梯实时仿真/);
   assert.doesNotMatch(html, /ETA 最优/);
 });
 
@@ -55,8 +55,16 @@ test("simulator provides a non-blocking model view", () => {
 
 test("desktop sidebar remains independently scrollable within one viewport", () => {
   assert.match(html, /#app \{ display:flex; height:100dvh; \}/);
-  assert.match(html, /#panel \{ width:380px;[^}]*overflow-y:auto/);
+  assert.match(html, /#panel \{ width:clamp\(400px,34vw,560px\);[^}]*overflow-y:auto/);
   assert.match(html, /@media \(max-width:760px\)[\s\S]*#app \{ height:auto; min-height:100dvh/);
+});
+
+test("simulator adapts the sidebar and exposes a Chinese-English switch", () => {
+  assert.match(html, /width:clamp\(400px,34vw,560px\)/);
+  assert.match(html, /@media \(max-width:1100px\) and \(min-width:761px\)/);
+  assert.match(html, /id="langToggle"/);
+  assert.match(html, /let LANG = 'zh'/);
+  assert.match(html, /LANG = LANG==='zh' \? 'en' : 'zh'/);
 });
 
 test("simulator presents core live metrics as a dashboard", () => {
