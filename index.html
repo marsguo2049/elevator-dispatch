@@ -64,7 +64,10 @@
   .algoStep b { display:block; color:#d9eaff; font-size:11px; }
   .algoStep span { display:block; margin-top:4px; color:#8ea5c3; font-size:10px; line-height:1.5; }
   .modelNote { margin-top:11px; color:#7f96b4; font-size:10px; line-height:1.5; }
-  .formula { margin-top:6px; padding:7px 8px; border-radius:7px; background:#081424; color:#9fd8ff; font-family:"SFMono-Regular",Consolas,monospace; font-size:10px; line-height:1.45; overflow-x:auto; }
+  .formula { margin-top:7px; padding:9px; border-radius:7px; background:#081424; color:#c6e8ff; overflow-x:auto; text-align:center; }
+  .formula math { font-family:Cambria Math,STIX Two Math,serif; font-size:1.18em; }
+  .symbolNote { display:block; margin-top:7px; color:#8ea5c3; font-size:9px; line-height:1.5; }
+  .metricNote { margin-top:9px; color:#7f96b4; font-size:9px; line-height:1.5; }
   .experimentStatus { margin-top:10px; color:#8ea5c3; font-size:10px; font-variant-numeric:tabular-nums; }
   #toast { position:absolute; left:50%; bottom:24px; transform:translateX(-50%); padding:8px 14px; border:1px solid #3b5879; border-radius:999px; background:rgba(15,28,48,.94); font-size:12px; opacity:0; transition:opacity .25s; pointer-events:none; }
   @media (max-width:760px) { body { overflow:auto; } #app { height:auto; min-height:100dvh; flex-direction:column; } #canvasWrap { height:49svh; min-height:320px; flex:none; } #panel { width:100%; overflow:visible; padding:16px; border-left:0; border-top:1px solid #213655; } h1 { font-size:23px; } .card { padding:14px; } }
@@ -169,11 +172,12 @@
       <div class="resultGrid" id="compareResult" hidden>
         <span class="resultHead">指标</span><span class="resultHead response">响应优先</span><span class="resultHead energy">节能优先</span>
         <span>平均等待</span><span id="cmpWaitResponse">–</span><span id="cmpWaitEnergy">–</span>
-        <span>P95 等待</span><span id="cmpP95Response">–</span><span id="cmpP95Energy">–</span>
+        <span>95% 等待阈值（P95）</span><span id="cmpP95Response">–</span><span id="cmpP95Energy">–</span>
         <span>完成行程</span><span id="cmpDoneResponse">–</span><span id="cmpDoneEnergy">–</span>
         <span>运行距离</span><span id="cmpDistanceResponse">–</span><span id="cmpDistanceEnergy">–</span>
         <span>停靠次数</span><span id="cmpStopsResponse">–</span><span id="cmpStopsEnergy">–</span>
       </div>
+      <p class="metricNote">95% 等待阈值（P95）表示：95% 的已上梯乘客等待时间都不超过这个值；它用来观察少数人是否等得特别久。</p>
       <button class="btn exportBtn" id="btnExport" disabled>↓ 导出 Markdown 报告</button>
     </div>
 
@@ -187,10 +191,10 @@
       <div class="card">
         <h2>模型与算法</h2>
         <div class="algorithm">
-          <div class="algoStep"><b>需求生成</b><span>乘客到达间隔服从泊松过程；λ 是到达率（人/分）。</span><div class="formula">Δt = −ln(1−U) / (λ / 60)</div></div>
-          <div class="algoStep"><b>预计到达时间</b><span>以路线距离、计划停靠和当前载客量估计每台车对一个楼层请求的响应代价。</span><div class="formula">T̂ₑ(f) = d_route / v + n_target(t_door + c) + n_rider·w</div></div>
-          <div class="algoStep"><b>派梯与容量约束</b><span>对每组“楼层 + 方向”请求，选择预计时间最小的轿厢；同时满足载客数不超过 C。</span><div class="formula">e* = arg minₑ T̂ₑ(f), &nbsp; ridersₑ ≤ C</div></div>
-          <div class="algoStep"><b>两种目标</b><span>响应优先降低接人时间；节能优先给新增停靠与逆向请求更高代价，以减少距离和停靠。</span><div class="formula">J_response ≈ T̂ₑ(f) &nbsp; | &nbsp; J_energy ≈ T̂ₑ(f) + α·stops + β·empty_distance</div></div>
+          <div class="algoStep"><b>需求生成 · 多久出现一位乘客？</b><span>到达率越高，平均间隔越短。公式用一个随机数生成下一位乘客的到达间隔。</span><div class="formula"><math display="block"><semantics><mrow><mi>Δt</mi><mo>=</mo><mfrac><mrow><mo>−</mo><mi>ln</mi><mo>(</mo><mn>1</mn><mo>−</mo><mi>U</mi><mo>)</mo></mrow><mrow><mi>λ</mi><mo>/</mo><mn>60</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">\Delta t = -\ln(1-U)/(\lambda/60)</annotation></semantics></math></div><span class="symbolNote">Δt：下一位乘客的到达间隔（秒）；λ：到达率（人/分）；U：0 到 1 的随机数。</span></div>
+          <div class="algoStep"><b>预计到达时间 · 哪台车能更快到？</b><span>把“还要走多远”和“途中要停几次”换算成时间，用作派梯依据。</span><div class="formula"><math display="block"><semantics><mrow><msub><mover><mi>T</mi><mo>^</mo></mover><mi>e</mi></msub><mo>(</mo><mi>f</mi><mo>)</mo><mo>=</mo><mfrac><msub><mi>D</mi><mi>e</mi></msub><mi>v</mi></mfrac><mo>+</mo><msub><mi>N</mi><mi>e</mi></msub><mo>·</mo><msub><mi>t</mi><mi>door</mi></msub></mrow><annotation encoding="application/x-tex">\hat{T}_e(f)=D_e/v+N_e\cdot t_{door}</annotation></semantics></math></div><span class="symbolNote">T̂ₑ(f)：电梯 e 到楼层 f 的预计时间；Dₑ：预计路线距离；v：速度；Nₑ：预计停靠数；t<sub>door</sub>：一次开关门耗时。</span></div>
+          <div class="algoStep"><b>派梯与容量 · 谁来接这组乘客？</b><span>对同一楼层、同一方向的呼叫，选择预计到达时间最短且仍有空间的电梯。</span><div class="formula"><math display="block"><semantics><mrow><msup><mi>e</mi><mo>*</mo></msup><mo>=</mo><munder><mrow><mi>arg min</mi></mrow><mi>e</mi></munder><msub><mover><mi>T</mi><mo>^</mo></mover><mi>e</mi></msub><mo>(</mo><mi>f</mi><mo>)</mo><mo>,</mo><mspace width="0.5em"/><msub><mi>R</mi><mi>e</mi></msub><mo>≤</mo><mi>C</mi></mrow><annotation encoding="application/x-tex">e^*=\arg\min_e \hat{T}_e(f),\quad R_e\le C</annotation></semantics></math></div><span class="symbolNote">e*：被选中的电梯；Rₑ：该车当前载客数；C：轿厢容量。容量满时不能继续上人。</span></div>
+          <div class="algoStep"><b>目标权衡 · 快一点还是少跑一点？</b><span>响应优先直接选择更快的接人时间；节能优先会额外惩罚停靠和空载移动。</span><div class="formula"><math display="block"><semantics><mrow><msub><mi>J</mi><mi>response</mi></msub><mo>=</mo><mover><mi>T</mi><mo>^</mo></mover><mspace width="1em"/><msub><mi>J</mi><mi>energy</mi></msub><mo>=</mo><mover><mi>T</mi><mo>^</mo></mover><mo>+</mo><mi>α</mi><mo>·</mo><mi>S</mi><mo>+</mo><mi>β</mi><mo>·</mo><msub><mi>D</mi><mi>empty</mi></msub></mrow><annotation encoding="application/x-tex">J_{response}=\hat T,\quad J_{energy}=\hat T+\alpha S+\beta D_{empty}</annotation></semantics></math></div><span class="symbolNote">J：调度评分（越小越好）；S：新增停靠数；D<sub>empty</sub>：空载移动距离；α、β：控制节能惩罚强度的权重。</span></div>
         </div>
         <p class="modelNote">现实参数对应：到达率 λ、速度 v、开门时间 t_door、轿厢容量 C、楼层数 F。切换到此处不会暂停或重置左侧正在运行的仿真；这里使用规则式启发式，适合用于解释和比较，不代表真实楼宇控制器的全局最优结果。</p>
       </div>
@@ -717,7 +721,7 @@ function exportMarkdown(){
     '## 结果',
     '| 指标 | 响应优先 | 节能优先 |',
     '| --- | ---: | ---: |',
-    line('平均等待','wait',' s'), line('P95 等待','p95',' s'), line('完成行程','done','',0),
+    line('95% 等待阈值（P95）','p95',' s'), line('平均等待','wait',' s'), line('完成行程','done','',0),
     line('运行距离','distance',' 层'), line('停靠次数','stops','',0), '',
     '## 说明',
     '响应优先更积极响应新呼叫；节能优先倾向合并顺路请求，以减少停靠和空载移动。结果仅适用于本次简化仿真与当前参数。'
