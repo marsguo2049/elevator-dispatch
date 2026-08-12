@@ -456,6 +456,15 @@ function serviceDirectionAt(e, floor, candidates){
   // 不能沿用刚刚抵达时的旧方向，否则高峰客流会被多延迟一个派梯周期。
   if(floor===1) return 1;
   if(floor===P.floors) return -1;
+  // 空轿厢是为该层呼叫而来时，可以在中间楼层换向。
+  // 若沿旧方向无人可接，选择等待最久乘客的方向，避免原地重复空停。
+  if(candidates.length && e.riders.length===0){
+    const hasCurrentDirection = candidates.some(p=>Math.sign(p.d-floor)===e.dir);
+    if(e.dir===0 || !hasCurrentDirection){
+      const oldest = candidates.reduce((a,b)=>a.t0<=b.t0 ? a : b);
+      return Math.sign(oldest.d-floor);
+    }
+  }
   return e.dir || (candidates.length ? Math.sign(candidates[0].d-floor) : 0);
 }
 
