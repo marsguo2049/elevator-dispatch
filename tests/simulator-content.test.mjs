@@ -4,24 +4,28 @@ import { readFile } from "node:fs/promises";
 
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 
-test("simulator states its heuristic and simulation scope", () => {
-  assert.match(html, /规则式启发式 · 随机离散时间仿真/);
-  assert.match(html, /不是全局最优求解器/);
+test("simulator leads with a concise City2049 purpose", () => {
+  assert.match(html, /CITY2049 · VERTICAL MOBILITY/);
+  assert.match(html, /实时观察多台电梯如何响应楼层呼叫/);
   assert.doesNotMatch(html, /ETA 最优/);
 });
 
-test("simulator exposes reproducible paired comparison", () => {
-  assert.match(html, /id="seed"/);
-  assert.match(html, /mulberry32/);
-  assert.match(html, /expGap/);
-  assert.match(html, /运行同样本 A\/B 对比/);
+test("simulator keeps a focused set of live controls", () => {
+  assert.match(html, /id="elevSeg"/);
+  assert.match(html, /id="floorSeg"/);
+  assert.match(html, /id="pattern"/);
+  assert.match(html, /id="capacity"/);
+  assert.match(html, /id="btnPause"/);
+  assert.doesNotMatch(html, /运行同样本 A\/B 对比/);
+  assert.doesNotMatch(html, /id="seed"/);
 });
 
-test("simulator exposes the single-elevator and group-control learning levels", () => {
-  assert.match(html, /Level 1 · 单梯/);
-  assert.match(html, /Level 2 · 群控/);
-  assert.match(html, /P95 等待/);
-  assert.match(html, /totalDistance/);
+test("simulator presents core live metrics as a dashboard", () => {
+  assert.match(html, /运行仪表盘/);
+  assert.match(html, /id="gWaiting"/);
+  assert.match(html, /id="gWait"/);
+  assert.match(html, /id="gDone"/);
+  assert.match(html, /style\.setProperty\('--p'/);
 });
 
 test("lobby calls remain shared rather than locking each passenger to one car", () => {
@@ -34,7 +38,7 @@ test("daily demand emphasizes lobby-to-floor travel and displays destinations", 
   assert.match(html, /日常客流（80% 大厅往返）/);
   assert.match(html, /if\(r\(\) < 0\.8\)/);
   assert.match(html, /fillText\('→'\+p\.d\+'F'/);
-  assert.match(html, /轿厢上方显示人数\/容量和目标楼层/);
+  assert.match(html, /e\.riders\.length\+'\/'\+P\.capacity\+' 人/);
 });
 
 test("simulator exposes a configurable hard elevator capacity", () => {
