@@ -83,3 +83,18 @@ test("a full elevator never boards beyond its configured capacity", () => {
   assert.equal(state.passengers.filter(p => p.state === "ride").length, 1);
   assert.equal(state.passengers.filter(p => p.state === "wait").length, 1);
 });
+
+test("a car can board an eligible passenger even when a different car planned the call", () => {
+  const sim = loadSimulator();
+  sim.P.floors = 14; sim.P.nElev = 2; sim.P.park = false; sim.reset();
+  const state = sim.getState();
+  const elevator = state.elevators[1];
+  elevator.y = 1; elevator.dir = -1; elevator.targets.add(1);
+  const passenger = waitingPassenger(1, 8, 0);
+  state.passengers.push(passenger);
+
+  sim.stepElevator(elevator, 0.1);
+
+  assert.equal(passenger.state, "ride");
+  assert.equal(passenger.elev, 1);
+});
