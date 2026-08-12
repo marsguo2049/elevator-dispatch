@@ -21,8 +21,11 @@ test("simulator keeps a focused set of live controls", () => {
 
 test("simulator compares both goals over the same fixed experiment", () => {
   assert.match(html, /同样本策略对比/);
-  assert.match(html, /固定 15 分钟/);
+  assert.match(html, /5 分钟 · 快速/);
+  assert.match(html, /10 分钟 · 推荐/);
+  assert.match(html, /自定义时长/);
   assert.match(html, /id="btnCompare"/);
+  assert.match(html, /id="btnExport"/);
   assert.match(html, /function runFixedScenario/);
   assert.match(html, /相同随机种子开始/);
   assert.match(html, /P95 等待/);
@@ -34,8 +37,15 @@ test("simulator explains and exposes response and energy dispatch goals", () => 
   assert.match(html, /响应优先/);
   assert.match(html, /节能优先/);
   assert.match(html, /尽量合并顺路请求，并减少停靠与空载移动/);
-  assert.match(html, /当前目标：/);
+  assert.match(html, /快速响应/);
   assert.doesNotMatch(html, /协同 ETA.*需求驻停/);
+});
+
+test("simulator provides a non-blocking model view", () => {
+  assert.match(html, /模型与算法/);
+  assert.match(html, /id="modelView"/);
+  assert.match(html, /切换到此处不会暂停或重置/);
+  assert.match(html, /id="viewTabs"/);
 });
 
 test("simulator presents core live metrics as a dashboard", () => {
