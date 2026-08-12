@@ -429,6 +429,14 @@ function stepElevator(e, dt){
   }
 }
 
+function serviceDirectionAt(e, floor, candidates){
+  // 两端楼层是自然换向点：大厅只能向上出发，顶层只能向下出发。
+  // 不能沿用刚刚抵达时的旧方向，否则高峰客流会被多延迟一个派梯周期。
+  if(floor===1) return 1;
+  if(floor===P.floors) return -1;
+  return e.dir || (candidates.length ? Math.sign(candidates[0].d-floor) : 0);
+}
+
 function arrive(e, floor){
   let acted = false;
   const off = e.riders.filter(p=>p.d===floor);
@@ -441,8 +449,8 @@ function arrive(e, floor){
     acted = true;
   }
   const candidates = S.passengers.filter(p=>p.state==='wait' && p.o===floor && p.assigned===e.id);
-  // 一次停靠只服务一个行进方向；相反方向呼梯留待后续派车。
-  let serviceDir = e.dir || (candidates.length ? Math.sign(candidates[0].d-floor) : 0);
+  // 中间楼层一次停靠只服务一个行进方向；两端楼层在此处自然换向。
+  const serviceDir = serviceDirectionAt(e, floor, candidates);
   const boarding = candidates.filter(p=>Math.sign(p.d-floor)===serviceDir);
   let boardDir = 0;
   if(boarding.length){
