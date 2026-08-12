@@ -9,7 +9,7 @@
   :root { color-scheme:dark; }
   body { font-family:Inter,ui-sans-serif,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:#08111f; color:#eef5ff; overflow:hidden; }
   button,input,select { font:inherit; }
-  #app { display:flex; min-height:100dvh; }
+  #app { display:flex; height:100dvh; }
   #canvasWrap { flex:1; min-width:0; position:relative; overflow:hidden; background:radial-gradient(circle at 35% 12%,#173d72 0%,#0d1b31 38%,#08111f 82%); }
   #canvasWrap::before { content:""; position:absolute; inset:0; pointer-events:none; background-image:linear-gradient(rgba(157,202,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(157,202,255,.04) 1px,transparent 1px); background-size:36px 36px; }
   canvas { display:block; }
@@ -65,7 +65,7 @@
   .algoStep span { display:block; margin-top:4px; color:#8ea5c3; font-size:10px; line-height:1.5; }
   .modelNote { margin-top:11px; color:#7f96b4; font-size:10px; line-height:1.5; }
   #toast { position:absolute; left:50%; bottom:24px; transform:translateX(-50%); padding:8px 14px; border:1px solid #3b5879; border-radius:999px; background:rgba(15,28,48,.94); font-size:12px; opacity:0; transition:opacity .25s; pointer-events:none; }
-  @media (max-width:760px) { body { overflow:auto; } #app { min-height:100dvh; flex-direction:column; } #canvasWrap { height:49svh; min-height:320px; flex:none; } #panel { width:100%; overflow:visible; padding:16px; border-left:0; border-top:1px solid #213655; } h1 { font-size:23px; } .card { padding:14px; } }
+  @media (max-width:760px) { body { overflow:auto; } #app { height:auto; min-height:100dvh; flex-direction:column; } #canvasWrap { height:49svh; min-height:320px; flex:none; } #panel { width:100%; overflow:visible; padding:16px; border-left:0; border-top:1px solid #213655; } h1 { font-size:23px; } .card { padding:14px; } }
 </style>
 </head>
 <body>
