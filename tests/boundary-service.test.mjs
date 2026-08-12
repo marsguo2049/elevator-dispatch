@@ -21,11 +21,11 @@ function loadSimulator(){
   const context = {
     console, Math, Map, Set, Proxy,
     window: { addEventListener() {} },
-    document: { getElementById: element, querySelectorAll: () => [] },
+    document: { documentElement: {}, getElementById: element, querySelectorAll: () => [] },
     requestAnimationFrame() {}, setTimeout: () => 0, clearTimeout() {},
   };
   const exposed = script.replace(
-    /reset\(\);\s*syncLevelUI\(\);\s*syncExperimentDuration\(\);\s*requestAnimationFrame\(loop\);/,
+    /reset\(\);\s*syncLevelUI\(\);\s*syncExperimentDuration\(\);\s*applyLanguage\(\);\s*requestAnimationFrame\(loop\);/,
     "globalThis.__sim = { P, reset, stepElevator, getState: () => S };",
   );
   vm.runInNewContext(exposed, context);
