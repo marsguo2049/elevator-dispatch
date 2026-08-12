@@ -29,7 +29,7 @@ test("simulator runs a visible, configurable strategy experiment", () => {
   assert.match(html, /function startExperiment/);
   assert.match(html, /function finishExperiment/);
   assert.match(html, /实验进行中/);
-  assert.match(html, /P95 等待/);
+  assert.match(html, /95% 等待阈值（P95）/);
   assert.match(html, /运行距离/);
 });
 
@@ -46,8 +46,9 @@ test("simulator provides a non-blocking model view", () => {
   assert.match(html, /模型与算法/);
   assert.match(html, /id="modelView"/);
   assert.match(html, /切换到此处不会暂停或重置/);
-  assert.match(html, /T̂ₑ\(f\)/);
-  assert.match(html, /arg minₑ/);
+  assert.match(html, /application\/x-tex/);
+  assert.match(html, /\\arg\\min/);
+  assert.match(html, /Δt：下一位乘客的到达间隔/);
   assert.match(html, /id="viewTabs"/);
 });
 
