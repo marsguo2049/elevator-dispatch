@@ -33,7 +33,14 @@ test("daily demand emphasizes lobby-to-floor travel and displays destinations", 
   assert.match(html, /日常客流（80% 大厅往返）/);
   assert.match(html, /if\(r\(\) < 0\.8\)/);
   assert.match(html, /fillText\('→'\+p\.d\+'F'/);
-  assert.match(html, /轿厢上方列出目标楼层/);
+  assert.match(html, /轿厢上方显示人数\/容量和目标楼层/);
+});
+
+test("simulator exposes a configurable hard elevator capacity", () => {
+  assert.match(html, /id="capacity"/);
+  assert.match(html, /P\.capacity = \+e\.target\.value/);
+  assert.match(html, /if\(e\.riders\.length>=P\.capacity\) break/);
+  assert.match(html, /e\.riders\.length\+'\/'\+P\.capacity\+' 人/);
 });
 
 test("inline simulator script parses", () => {
