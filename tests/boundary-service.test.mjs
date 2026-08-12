@@ -26,7 +26,7 @@ function loadSimulator(){
   };
   const exposed = script.replace(
     /reset\(\);\s*syncLevelUI\(\);\s*requestAnimationFrame\(loop\);/,
-    "globalThis.__sim = { P, reset, stepElevator, getState: () => S };",
+    "globalThis.__sim = { P, reset, stepElevator, runFixedScenario, getState: () => S };",
   );
   vm.runInNewContext(exposed, context);
   return context.__sim;
@@ -132,4 +132,18 @@ test("a loaded car does not reverse for an opposite-direction intermediate call"
   assert.equal(elevator.dir, 1);
   assert.equal(elevator.riders.length, 1);
   assert.equal(elevator.targets.has(10), true);
+});
+
+test("fixed-duration experiments are reproducible and preserve the live simulation", () => {
+  const sim = loadSimulator();
+  sim.P.floors = 14; sim.P.nElev = 2; sim.P.ratePerMin = 6; sim.reset();
+  const liveState = sim.getState();
+
+  const first = sim.runFixedScenario("wait");
+  const second = sim.runFixedScenario("wait");
+
+  assert.deepEqual(first, second);
+  assert.equal(sim.getState(), liveState);
+  assert.equal(typeof first.wait, "number");
+  assert.equal(typeof first.distance, "number");
 });
