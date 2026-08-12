@@ -9,35 +9,43 @@
   :root { color-scheme: dark; }
   body {
     font-family: Inter, ui-sans-serif, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: #0b1020; color: #edf2ff; overflow: hidden;
+    background: #070b16; color: #edf2ff; overflow: hidden;
   }
   button, input, select { font: inherit; }
   #app { display: flex; height: 100dvh; }
-  #canvasWrap { flex: 1; position: relative; }
+  #canvasWrap {
+    flex: 1; position: relative; overflow:hidden;
+    background: radial-gradient(circle at 32% 18%, #183866 0%, #0d1930 35%, #070d1b 78%);
+  }
+  #canvasWrap::before {
+    content:""; position:absolute; inset:0; pointer-events:none; opacity:.42;
+    background-image: linear-gradient(rgba(117,190,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(117,190,255,.035) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
   canvas { display: block; }
   #panel {
-    width: 390px; background: #121a2e; border-left: 1px solid #293553;
-    padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
-    scrollbar-color: #3a4a72 transparent;
+    width: 410px; background: linear-gradient(180deg, #121c31 0%, #0c1323 100%); border-left: 1px solid #30466a;
+    padding: 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+    scrollbar-color: #44618e transparent; box-shadow: -18px 0 45px #02061155;
   }
-  h1 { font-size: 22px; line-height:1.2; font-weight: 720; letter-spacing:-.02em; }
+  h1 { font-size: 24px; line-height:1.15; font-weight: 760; letter-spacing:-.035em; }
   h1 small { font-weight: 400; color: #96a3bd; font-size: 12px; display:block; margin-top:7px; line-height:1.6;}
-  .eyebrow { color:#69b7ff; text-transform:uppercase; letter-spacing:.14em; font-size:10px; font-weight:750; margin-bottom:7px; }
-  .card { background: #1a2540; border:1px solid #263554; border-radius: 12px; padding: 13px 14px; }
-  .card h2 { font-size: 13px; color: #9fb0d0; margin-bottom: 10px; font-weight: 600; letter-spacing: .5px;}
+  .eyebrow { color:#79c3ff; text-transform:uppercase; letter-spacing:.15em; font-size:10px; font-weight:800; margin-bottom:8px; }
+  .card { background: linear-gradient(145deg, #1a2945 0%, #131f36 100%); border:1px solid #2c4267; border-radius: 14px; padding: 14px 15px; box-shadow: inset 0 1px 0 #ffffff08, 0 8px 20px #03081724; }
+  .card h2 { font-size: 11px; color: #a9bcdd; margin-bottom: 11px; font-weight: 800; letter-spacing: .09em; text-transform:uppercase; }
   .row { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; font-size: 13px; }
   .row label { color: #c3cde2; }
   .row .val { color: #ffd166; font-variant-numeric: tabular-nums; }
   input[type=range] { width: 130px; accent-color: #4da3ff; }
   select, .btn {
-    background: #26314e; color: #e8ecf4; border: 1px solid #3a4a72;
-    border-radius: 6px; padding: 4px 8px; font-size: 13px; cursor: pointer;
+    background: #263858; color: #e8ecf4; border: 1px solid #42608f;
+    border-radius: 8px; padding: 5px 9px; font-size: 12px; cursor: pointer; transition: .18s ease;
   }
-  .btn:hover { background: #31406a; }
+  .btn:hover { background: #36527f; border-color:#69b7ff; transform:translateY(-1px); }
   .seg { display: flex; gap: 6px; }
-  .seg .btn.on { background: #4da3ff; border-color: #4da3ff; color: #06121f; font-weight: 600; }
+  .seg .btn.on { background: linear-gradient(135deg, #78c8ff, #4e91ff); border-color: #83cbff; color: #06121f; font-weight: 750; box-shadow:0 4px 14px #328dff40; }
   .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .stat { background: #141b2d; border-radius: 8px; padding: 8px 10px; }
+  .stat { background: #101a2d; border:1px solid #253a5c; border-radius: 10px; padding: 9px 10px; }
   .stat .k { font-size: 11px; color: #8a94ad; }
   .stat .v { font-size: 18px; font-weight: 700; color: #7ce3b1; font-variant-numeric: tabular-nums;}
   .stat .v.warn { color: #ffd166; }
@@ -68,7 +76,7 @@
   .deltaGood { color:#7ce3b1; }
   .deltaBad { color:#ff8f8f; }
   .fine { color:#7f8ca7; font-size:10px; line-height:1.55; }
-  .pill { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border-radius:999px; background:#4da3ff18; color:#86c7ff; border:1px solid #4da3ff44; font-size:10px; margin-top:9px; }
+  .pill { display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:999px; background:#4da3ff18; color:#9ad3ff; border:1px solid #4da3ff55; font-size:10px; margin-top:10px; }
   @media (max-width: 760px) {
     body { overflow:auto; }
     #app { min-height:100dvh; height:auto; flex-direction:column; }
@@ -93,7 +101,7 @@
         <div class="modelItem"><b>生活场景</b><span>办公楼乘客随机呼梯；单梯或多梯共同服务。</span></div>
         <div class="modelItem"><b>核心决策</b><span>先服务哪些请求；多梯时由哪台车响应。</span></div>
         <div class="modelItem"><b>评价目标</b><span>等待与全程时间更短，同时减少停靠与无效移动。</span></div>
-        <div class="modelItem"><b>主要约束</b><span>载客 8 人、速度与门时间固定、上下行方向一致。</span></div>
+        <div class="modelItem"><b>主要约束</b><span>载客容量、速度与门时间固定、上下行方向一致。</span></div>
       </div>
       <div class="notice">这不是全局最优求解器。系统使用可解释的 ETA 成本规则与需求感知驻停，并与“最近可达车”基准做同样本仿真比较。</div>
     </div>
@@ -132,6 +140,9 @@
       </div>
       <div class="row"><label>到达率 <span class="val" id="rateVal">6 人/分</span></label>
         <input type="range" id="rate" min="1" max="20" value="6">
+      </div>
+      <div class="row"><label>轿厢容量 <span class="val" id="capacityVal">8 人</span></label>
+        <input type="range" id="capacity" min="2" max="16" value="8">
       </div>
       <div class="row"><label for="seed">随机种子</label><input class="inputSmall" id="seed" type="number" min="1" max="999999" value="2026"></div>
     </div>
@@ -203,7 +214,7 @@
     <div class="card legend">
       <h2>图例</h2>
       <span class="dot" style="background:#ffd166"></span>候梯乘客（旁边的 → 楼层是目标；颜色表示已分配电梯）<br>
-      <span class="dot" style="background:#7ce3b1"></span>电梯内乘客（轿厢上方列出目标楼层）<br>
+      <span class="dot" style="background:#7ce3b1"></span>电梯内乘客（轿厢上方显示人数/容量和目标楼层）<br>
       <span class="dot" style="background:#4da3ff"></span>楼层需求热度（左侧蓝条）<br>
       电梯边框发光 = 正在执行空闲驻停移动
     </div>
@@ -568,7 +579,7 @@ function draw(){
       ctx.fillStyle = '#a9ffd4';
       ctx.font = '9px sans-serif';
       const destinations = e.riders.map(p=>p.d+'F').join(' · ');
-      ctx.fillText('→ '+destinations, x, ey-5);
+      ctx.fillText(e.riders.length+'/'+P.capacity+' 人  → '+destinations, x, ey-5);
       ctx.font = '11px sans-serif';
     }
     ctx.fillStyle = '#9fb0d0';
@@ -743,6 +754,11 @@ document.getElementById('rate').addEventListener('input', e=>{
   document.getElementById('rateVal').textContent = P.ratePerMin+' 人/分';
 });
 document.getElementById('rate').addEventListener('change', ()=>{ reset(); toast('已用新的到达率重置'); });
+document.getElementById('capacity').addEventListener('input', e=>{
+  P.capacity = +e.target.value;
+  document.getElementById('capacityVal').textContent = P.capacity+' 人';
+});
+document.getElementById('capacity').addEventListener('change', ()=>{ reset(); toast('已用新的轿厢容量重置'); });
 document.getElementById('seed').addEventListener('change', e=>{
   P.seed = Math.max(1, Math.min(999999, +e.target.value || 2026));
   e.target.value = P.seed;
