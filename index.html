@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Elevator Group · City2049</title>
+<title>Elevator · City2049</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   :root { color-scheme:dark; }
@@ -13,7 +13,7 @@
   #canvasWrap { flex:1; min-width:0; position:relative; overflow:hidden; background:radial-gradient(circle at 35% 12%,#173d72 0%,#0d1b31 38%,#08111f 82%); }
   #canvasWrap::before { content:""; position:absolute; inset:0; pointer-events:none; background-image:linear-gradient(rgba(157,202,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(157,202,255,.04) 1px,transparent 1px); background-size:36px 36px; }
   canvas { display:block; }
-  #panel { width:clamp(400px,34vw,560px); min-width:360px; padding:clamp(18px,2vw,26px); overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column; gap:14px; background:#0d1728; border-left:1px solid #213655; box-shadow:-16px 0 40px #02071340; }
+  #panel { flex:0 1 clamp(400px,38vw,600px); width:clamp(400px,38vw,600px); min-width:360px; padding:clamp(18px,2vw,26px); overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column; gap:14px; background:#0d1728; border-left:1px solid #213655; box-shadow:-16px 0 40px #02071340; }
   .eyebrow { color:#75c4ff; font-size:10px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
   h1 { margin-top:6px; font-size:27px; line-height:1; font-weight:800; letter-spacing:.015em; text-transform:uppercase; }
   .subtitle { margin-top:9px; color:#9badc7; font-size:11px; line-height:1.5; letter-spacing:.015em; }
@@ -68,12 +68,12 @@
   .modelNote { margin-top:11px; color:#7f96b4; font-size:10px; line-height:1.5; }
   #modelView { min-width:0; }
   .formula { margin-top:7px; max-width:100%; padding:9px 6px; border-radius:7px; background:#081424; color:#c6e8ff; overflow:hidden; text-align:center; }
-  .formula math { max-width:100%; font-family:Cambria Math,STIX Two Math,serif; font-size:clamp(.82rem,2.6vw,1.02rem); }
+  .formula math { max-width:100%; font-family:Cambria Math,STIX Two Math,serif; font-size:clamp(.78rem,2.25vw,1.02rem); }
   .symbolNote { display:block; margin-top:7px; color:#8ea5c3; font-size:9px; line-height:1.5; }
   .metricNote { margin-top:9px; color:#7f96b4; font-size:9px; line-height:1.5; }
   .experimentStatus { margin-top:10px; color:#8ea5c3; font-size:10px; font-variant-numeric:tabular-nums; }
   #toast { position:absolute; left:50%; bottom:24px; transform:translateX(-50%); padding:8px 14px; border:1px solid #3b5879; border-radius:999px; background:rgba(15,28,48,.94); font-size:12px; opacity:0; transition:opacity .25s; pointer-events:none; }
-  @media (max-width:1100px) and (min-width:761px) { #panel { width:clamp(380px,42vw,480px); min-width:0; padding:18px; } .formula math { font-size:clamp(.72rem,2.25vw,.92rem); } }
+  @media (max-width:1100px) and (min-width:761px) { #panel { flex-basis:clamp(380px,42vw,500px); width:clamp(380px,42vw,500px); min-width:0; padding:18px; } .formula math { font-size:clamp(.68rem,2vw,.9rem); } }
   @media (max-width:760px) { body { overflow:auto; } #app { height:auto; min-height:100dvh; flex-direction:column; } #canvasWrap { height:49svh; min-height:320px; flex:none; } #panel { width:100%; min-width:0; overflow:visible; padding:16px; border-left:0; border-top:1px solid #213655; } h1 { font-size:23px; } .card { padding:14px; } }
 </style>
 </head>
@@ -83,8 +83,8 @@
   <div id="panel">
     <header>
       <div class="headerRow"><div class="eyebrow" id="eyebrow">CITY2049 · URBAN SYSTEMS</div><button class="btn langBtn" id="langToggle">EN</button></div>
-      <h1>Elevator Group</h1>
-      <p class="subtitle" id="subtitle">Group Control · 群控电梯实时仿真</p>
+      <h1 id="brandTitle">电梯实时仿真</h1>
+      <p class="subtitle" id="subtitle">城市垂直交通 · 群控仿真</p>
     </header>
 
     <div class="viewTabs" id="viewTabs">
@@ -101,9 +101,9 @@
         <div class="gauge" id="gDone" style="--accent:#7ce3b1"><div><strong id="stDone">0</strong><span data-i18n="completed">完成行程</span></div></div>
       </div>
       <div class="miniStats">
-        <div class="mini"><span>已上梯</span><strong id="stServed">0</strong></div>
-        <div class="mini"><span>最长等待</span><strong id="stMaxWait">–</strong></div>
-        <div class="mini"><span>仿真时间</span><strong id="stClock">00:00</strong></div>
+        <div class="mini"><span data-i18n="boarded">已上梯</span><strong id="stServed">0</strong></div>
+        <div class="mini"><span data-i18n="longestWait">最长等待</span><strong id="stMaxWait">–</strong></div>
+        <div class="mini"><span data-i18n="simulationTime">仿真时间</span><strong id="stClock">00:00</strong></div>
       </div>
     </div>
 
@@ -111,23 +111,18 @@
       <h2 data-i18n="settings">仿真设置</h2>
       <div class="row"><label data-i18n="cars">电梯数量</label>
         <div class="seg" id="elevSeg">
-          <button class="btn" data-n="1">1 台</button>
-          <button class="btn on" data-n="2">2 台</button>
-          <button class="btn" data-n="4">4 台</button>
+          <button class="btn" data-n="1">1</button><button class="btn on" data-n="2">2</button><button class="btn" data-n="3">3</button>
+          <button class="btn" data-n="4">4</button><button class="btn" data-n="5">5</button><button class="btn" data-n="6">6</button>
         </div>
       </div>
       <div class="row"><label data-i18n="floors">楼层数</label>
         <div class="seg" id="floorSeg">
-          <button class="btn on" data-n="14">14 层</button>
-          <button class="btn" data-n="20">20 层</button>
+          <button class="btn" data-n="8">8</button><button class="btn on" data-n="16">16</button><button class="btn" data-n="20">20</button>
         </div>
       </div>
       <div class="row"><label data-i18n="traffic">客流模式</label>
         <select id="pattern">
-          <option value="random">日常客流（80% 大厅往返）</option>
-          <option value="morning">早高峰（上行）</option>
-          <option value="evening">晚高峰（下行）</option>
-          <option value="lunch">午间双向</option>
+          <option value="random">日常客流（80% 大厅往返）</option><option value="morning">早高峰（上行）</option><option value="evening">晚高峰（下行）</option><option value="lunch">午间双向</option>
         </select>
       </div>
       <div class="row"><label data-i18n="goal">调度目标</label>
@@ -137,19 +132,15 @@
         </div>
       </div>
       <p class="objectiveNote" id="objHint">优先缩短乘客等待时间，电梯会更积极地响应新的呼叫。</p>
-      <div class="row"><label>到达率 <span class="val" id="rateVal">6 人/分</span></label>
+      <div class="row"><label><span data-i18n="arrivalRate">到达率</span> <span class="val" id="rateVal">6 人/分</span></label>
         <input type="range" id="rate" min="1" max="20" value="6">
       </div>
       <div class="row"><label data-i18n="capacity">轿厢规格</label>
         <select id="capacity">
-          <option value="6">紧凑 · 6 人 / 480kg</option>
-          <option value="8" selected>标准 · 8 人 / 630kg</option>
-          <option value="10">高流量 · 10 人 / 800kg</option>
-          <option value="13">宽敞 · 13 人 / 1000kg</option>
-          <option value="16">大型 · 16 人 / 1250kg</option>
+          <option value="6">紧凑 · 6 人 / 480kg</option><option value="8" selected>标准 · 8 人 / 630kg</option><option value="10">高流量 · 10 人 / 800kg</option><option value="13">宽敞 · 13 人 / 1000kg</option><option value="16">大型 · 16 人 / 1250kg</option>
         </select>
       </div>
-      <div class="row"><label>时间倍速 <span class="val" id="speedVal">4×</span></label>
+      <div class="row"><label><span data-i18n="speed">时间倍速</span> <span class="val" id="speedVal">4×</span></label>
         <input type="range" id="speed" min="1" max="16" value="4">
       </div>
       <div class="controls" style="margin-top:14px;">
@@ -160,8 +151,8 @@
 
     <div class="card experiment">
       <h2 id="compareTitle">策略实验 · 10 分钟</h2>
-      <p>选择当前目标后开始运行。实验会在主画布中实时进行，到达设定时长后自动暂停。切换目标并重新运行，可在下表比较同样本结果。</p>
-      <div class="row" style="margin-top:11px;"><label for="compareDuration">模拟时长</label>
+      <p data-i18n="experimentIntro">选择当前目标后开始运行。实验会在主画布中实时进行，到达设定时长后自动暂停。切换目标并重新运行，可在下表比较同样本结果。</p>
+      <div class="row" style="margin-top:11px;"><label for="compareDuration" data-i18n="duration">模拟时长</label>
         <select id="compareDuration">
           <option value="5">5 分钟 · 快速</option>
           <option value="10" selected>10 分钟 · 推荐</option>
@@ -170,24 +161,24 @@
           <option value="custom">自定义</option>
         </select>
       </div>
-      <div class="row" id="customDurationRow" hidden><label for="customDuration">自定义时长</label><span><input class="minutesInput" id="customDuration" type="number" min="1" max="120" value="10"> 分钟</span></div>
+      <div class="row" id="customDurationRow" hidden><label for="customDuration" data-i18n="customDuration">自定义时长</label><span><input class="minutesInput" id="customDuration" type="number" min="1" max="120" value="10"> <span data-i18n="minutes">分钟</span></span></div>
       <button class="btn primary" id="btnCompare">开始 10 分钟实验</button>
       <p class="experimentStatus" id="experimentStatus">尚未开始实验 · 时间倍速只影响观看速度</p>
       <div class="resultGrid" id="compareResult" hidden>
-        <span class="resultHead">指标</span><span class="resultHead response">响应优先</span><span class="resultHead energy">节能优先</span>
-        <span>平均等待</span><span id="cmpWaitResponse">–</span><span id="cmpWaitEnergy">–</span>
-        <span>95% 等待阈值（P95）</span><span id="cmpP95Response">–</span><span id="cmpP95Energy">–</span>
-        <span>完成行程</span><span id="cmpDoneResponse">–</span><span id="cmpDoneEnergy">–</span>
-        <span>运行距离</span><span id="cmpDistanceResponse">–</span><span id="cmpDistanceEnergy">–</span>
-        <span>停靠次数</span><span id="cmpStopsResponse">–</span><span id="cmpStopsEnergy">–</span>
+        <span class="resultHead" data-i18n="metric">指标</span><span class="resultHead response" data-i18n="response">响应优先</span><span class="resultHead energy" data-i18n="energy">节能优先</span>
+        <span data-i18n="meanWait">平均等待</span><span id="cmpWaitResponse">–</span><span id="cmpWaitEnergy">–</span>
+        <span data-i18n="p95">95% 等待阈值（P95）</span><span id="cmpP95Response">–</span><span id="cmpP95Energy">–</span>
+        <span data-i18n="completedTrips">完成行程</span><span id="cmpDoneResponse">–</span><span id="cmpDoneEnergy">–</span>
+        <span data-i18n="travelDistance">运行距离</span><span id="cmpDistanceResponse">–</span><span id="cmpDistanceEnergy">–</span>
+        <span data-i18n="stops">停靠次数</span><span id="cmpStopsResponse">–</span><span id="cmpStopsEnergy">–</span>
       </div>
-      <p class="metricNote">95% 等待阈值（P95）表示：95% 的已上梯乘客等待时间都不超过这个值；它用来观察少数人是否等得特别久。</p>
-      <button class="btn exportBtn" id="btnExport" disabled>↓ 导出 Markdown 报告</button>
+      <p class="metricNote" data-i18n="p95Note">95% 等待阈值（P95）表示：95% 的已上梯乘客等待时间都不超过这个值；它用来观察少数人是否等得特别久。</p>
+      <button class="btn exportBtn" id="btnExport" disabled data-i18n="export">↓ 导出 Markdown 报告</button>
     </div>
 
     <div class="card">
-      <h2>读图提示</h2>
-      <p class="hint">黄色圆点是候梯乘客，旁边的 → 楼层表示目的地；绿色圆点表示轿厢内乘客。每台车都可接走方向一致且未满载的候梯者。</p>
+      <h2 data-i18n="readingGuide">读图提示</h2>
+      <p class="hint" data-i18n="readingGuideText">黄色圆点是候梯乘客，旁边的 → 楼层表示目的地；绿色圆点表示轿厢内乘客。每台车都可接走方向一致且未满载的候梯者。</p>
     </div>
     </div>
 
@@ -195,12 +186,12 @@
       <div class="card">
         <h2 data-i18n="modelTitle">模型与算法</h2>
         <div class="algorithm">
-          <div class="algoStep"><b>需求生成 · 多久出现一位乘客？</b><span>到达率越高，平均间隔越短。公式用一个随机数生成下一位乘客的到达间隔。</span><div class="formula"><math display="block"><semantics><mrow><mi>Δt</mi><mo>=</mo><mfrac><mrow><mo>−</mo><mi>ln</mi><mo>(</mo><mn>1</mn><mo>−</mo><mi>U</mi><mo>)</mo></mrow><mrow><mi>λ</mi><mo>/</mo><mn>60</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">\Delta t = -\ln(1-U)/(\lambda/60)</annotation></semantics></math></div><span class="symbolNote">Δt：下一位乘客的到达间隔（秒）；λ：到达率（人/分）；U：0 到 1 的随机数。</span></div>
-          <div class="algoStep"><b>预计到达时间 · 哪台车能更快到？</b><span>把“还要走多远、途中要停几次、车里已有多少人”换算为派梯成本。这一式对应当前代码的基础 ETA。</span><div class="formula"><math display="block"><semantics><mrow><msub><mover><mi>T</mi><mo>^</mo></mover><mi>e</mi></msub><mo>(</mo><mi>f</mi><mo>)</mo><mo>=</mo><mfrac><msub><mi>D</mi><mi>e</mi></msub><mi>v</mi></mfrac><mo>+</mo><msub><mi>N</mi><mi>e</mi></msub><mo>(</mo><msub><mi>t</mi><mi>door</mi></msub><mo>+</mo><mn>0.9</mn><mo>)</mo><mo>+</mo><mn>0.55</mn><msub><mi>R</mi><mi>e</mi></msub></mrow><annotation encoding="application/x-tex">\hat{T}_e(f)=D_e/v+N_e(t_{door}+0.9)+0.55R_e</annotation></semantics></math></div><span class="symbolNote">T̂ₑ(f)：电梯 e 到楼层 f 的基础预计时间；Dₑ：预计路线距离；v：速度；Nₑ：计划停靠数；t<sub>door</sub>：开关门耗时；Rₑ：当前载客数。0.9 与 0.55 是本演示的规则权重（秒）。</span></div>
-          <div class="algoStep"><b>派梯与容量 · 谁来接这组乘客？</b><span>对同一楼层、同一方向的呼叫，选择调整后成本最小的电梯；满载车会被加上较大成本，但“不能上车”是服务阶段的硬约束。</span><div class="formula"><math display="block"><semantics><mrow><msup><mi>e</mi><mo>*</mo></msup><mo>=</mo><munder><mrow><mi>arg min</mi></mrow><mi>e</mi></munder><msub><mi>C</mi><mi>e</mi></msub><mo>(</mo><mi>f</mi><mo>)</mo><mspace width="0.8em"/><mtext>且上车需</mtext><mspace width="0.4em"/><msub><mi>R</mi><mi>e</mi></msub><mo>&lt;</mo><mi>C</mi></mrow><annotation encoding="application/x-tex">e^*=\arg\min_e C_e(f),\quad R_e&lt;C</annotation></semantics></math></div><span class="symbolNote">Cₑ(f)：加入方向、满载、等待时长等修正后的派梯成本；e*：被选中的电梯；Rₑ：当前载客数；C：轿厢容量。代码中满载车仍可被考虑，但会被强烈惩罚；真正登梯时严格要求 Rₑ &lt; C。</span></div>
-          <div class="algoStep"><b>目标权衡 · 快一点还是少跑一点？</b><span>两种目标不是全局优化器，而是对 ETA 成本的不同规则修正。以下两式与当前派梯权重一一对应。</span><div class="formula"><math display="block"><semantics><mrow><msub><mi>C</mi><mi>wait</mi></msub><mo>=</mo><mover><mi>T</mi><mo>^</mo></mover><mo>−</mo><mn>0.08</mn><mo>·</mo><mi>min</mi><mo>(</mo><mi>W</mi><mo>,</mo><mn>90</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">C_{wait}=\hat T-0.08\min(W,90)</annotation></semantics></math></div><div class="formula"><math display="block"><semantics><mrow><msub><mi>C</mi><mi>energy</mi></msub><mo>=</mo><mn>0.85</mn><mo>·</mo><msub><mi>m</mi><mi>dir</mi></msub><mo>[</mo><msub><mi>m</mi><mi>route</mi></msub><mover><mi>T</mi><mo>^</mo></mover><mo>+</mo><msub><mi>I</mi><mi>new</mi></msub><mo>(</mo><mn>10</mn><mo>+</mo><mn>2</mn><msub><mi>N</mi><mi>e</mi></msub><mo>)</mo><mo>]</mo><mo>−</mo><mn>0.08</mn><mo>·</mo><mi>min</mi><mo>(</mo><mi>W</mi><mo>,</mo><mn>90</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">C_{energy}=0.85m_{dir}[m_{route}\hat T+I_{new}(10+2N_e)]-0.08\min(W,90)</annotation></semantics></math></div><span class="symbolNote">C：成本（越小越优）；W：该组乘客已等待秒数；m<sub>route</sub>：已有同层停靠时为 0.25，否则为 1；m<sub>dir</sub>：顺方向时为 0.7，否则为 1；I<sub>new</sub>：新增停靠时为 1，否则为 0。节能优先由此鼓励顺路拼单、减少新停靠。</span></div>
+          <div class="algoStep"><b data-i18n="demandTitle">需求生成 · 多久出现一位乘客？</b><span data-i18n="demandText">到达率越高，平均间隔越短。公式用一个随机数生成下一位乘客的到达间隔。</span><div class="formula"><math display="block"><semantics><mrow><mi>Δt</mi><mo>=</mo><mfrac><mrow><mo>−</mo><mi>ln</mi><mo>(</mo><mn>1</mn><mo>−</mo><mi>U</mi><mo>)</mo></mrow><mrow><mi>λ</mi><mo>/</mo><mn>60</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">\Delta t = -\ln(1-U)/(\lambda/60)</annotation></semantics></math></div><span class="symbolNote" data-i18n="demandSymbols">Δt：下一位乘客的到达间隔（秒）；λ：到达率（人/分）；U：0 到 1 的随机数。</span></div>
+          <div class="algoStep"><b data-i18n="etaTitle">预计到达时间 · 哪台车能更快到？</b><span data-i18n="etaText">把“还要走多远、途中要停几次、车里已有多少人”换算为派梯成本。这一式对应当前代码的基础 ETA。</span><div class="formula"><math display="block"><semantics><mrow><msub><mover><mi>T</mi><mo>^</mo></mover><mi>e</mi></msub><mo>(</mo><mi>f</mi><mo>)</mo><mo>=</mo><mfrac><msub><mi>D</mi><mi>e</mi></msub><mi>v</mi></mfrac><mo>+</mo><msub><mi>N</mi><mi>e</mi></msub><mo>(</mo><msub><mi>t</mi><mi>door</mi></msub><mo>+</mo><mn>0.9</mn><mo>)</mo><mo>+</mo><mn>0.55</mn><msub><mi>R</mi><mi>e</mi></msub></mrow><annotation encoding="application/x-tex">\hat{T}_e(f)=D_e/v+N_e(t_{door}+0.9)+0.55R_e</annotation></semantics></math></div><span class="symbolNote" data-i18n="etaSymbols">T̂ₑ(f)：电梯 e 到楼层 f 的基础预计时间；Dₑ：预计路线距离；v：速度；Nₑ：计划停靠数；t<sub>door</sub>：开关门耗时；Rₑ：当前载客数。0.9 与 0.55 是本演示的规则权重（秒）。</span></div>
+          <div class="algoStep"><b data-i18n="assignmentTitle">派梯与容量 · 谁来接这组乘客？</b><span data-i18n="assignmentText">对同一楼层、同一方向的呼叫，选择调整后成本最小的电梯；满载车会被加上较大成本，但“不能上车”是服务阶段的硬约束。</span><div class="formula"><math display="block"><semantics><mrow><msup><mi>e</mi><mo>*</mo></msup><mo>=</mo><munder><mrow><mi>arg min</mi></mrow><mi>e</mi></munder><msub><mi>C</mi><mi>e</mi></msub><mo>(</mo><mi>f</mi><mo>)</mo><mspace width="0.8em"/><mtext id="boardingConstraint">且上车需</mtext><mspace width="0.4em"/><msub><mi>R</mi><mi>e</mi></msub><mo>&lt;</mo><mi>C</mi></mrow><annotation encoding="application/x-tex">e^*=\arg\min_e C_e(f),\quad R_e&lt;C</annotation></semantics></math></div><span class="symbolNote" data-i18n="assignmentSymbols">Cₑ(f)：加入方向、满载、等待时长等修正后的派梯成本；e*：被选中的电梯；Rₑ：当前载客数；C：轿厢容量。代码中满载车仍可被考虑，但会被强烈惩罚；真正登梯时严格要求 Rₑ &lt; C。</span></div>
+          <div class="algoStep"><b data-i18n="objectiveTitle">目标权衡 · 快一点还是少跑一点？</b><span data-i18n="objectiveText">两种目标不是全局优化器，而是对 ETA 成本的不同规则修正。以下两式与当前派梯权重一一对应。</span><div class="formula"><math display="block"><semantics><mrow><msub><mi>C</mi><mi>wait</mi></msub><mo>=</mo><mover><mi>T</mi><mo>^</mo></mover><mo>−</mo><mn>0.08</mn><mo>·</mo><mi>min</mi><mo>(</mo><mi>W</mi><mo>,</mo><mn>90</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">C_{wait}=\hat T-0.08\min(W,90)</annotation></semantics></math></div><div class="formula"><math display="block"><semantics><mrow><msub><mi>C</mi><mi>energy</mi></msub><mo>=</mo><mn>0.85</mn><mo>·</mo><msub><mi>m</mi><mi>dir</mi></msub><mo>[</mo><msub><mi>m</mi><mi>route</mi></msub><mover><mi>T</mi><mo>^</mo></mover><mo>+</mo><msub><mi>I</mi><mi>new</mi></msub><mo>(</mo><mn>10</mn><mo>+</mo><mn>2</mn><msub><mi>N</mi><mi>e</mi></msub><mo>)</mo><mo>]</mo><mo>−</mo><mn>0.08</mn><mo>·</mo><mi>min</mi><mo>(</mo><mi>W</mi><mo>,</mo><mn>90</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">C_{energy}=0.85m_{dir}[m_{route}\hat T+I_{new}(10+2N_e)]-0.08\min(W,90)</annotation></semantics></math></div><span class="symbolNote" data-i18n="objectiveSymbols">C：成本（越小越优）；W：该组乘客已等待秒数；m<sub>route</sub>：已有同层停靠时为 0.25，否则为 1；m<sub>dir</sub>：顺方向时为 0.7，否则为 1；I<sub>new</sub>：新增停靠时为 1，否则为 0。节能优先由此鼓励顺路拼单、减少新停靠。</span></div>
         </div>
-        <p class="modelNote">现实参数对应：到达率 λ、速度 v、开门时间 t_door、轿厢容量 C、楼层数 F。切换到此处不会暂停或重置左侧正在运行的仿真；这里使用规则式启发式，适合用于解释和比较，不代表真实楼宇控制器的全局最优结果。</p>
+        <p class="modelNote" data-i18n="modelNote">现实参数对应：到达率 λ、速度 v、开门时间 t_door、轿厢容量 C、楼层数 F。切换到此处不会暂停或重置左侧正在运行的仿真；这里使用规则式启发式，适合用于解释和比较，不代表真实楼宇控制器的全局最优结果。</p>
       </div>
     </div>
   </div>
@@ -209,7 +200,7 @@
 "use strict";
 /* ================= 参数 ================= */
 const P = {
-  floors: 14, nElev: 2, pattern: 'random', level: 2,
+  floors: 16, nElev: 2, pattern: 'random', level: 2,
   ratePerMin: 6, speed: 4, seed: 2026,
   coop: true, park: true, objective: 'wait',
   floorH: 0, shaftW: 54, lobbyPad: 46, topPad: 48,
@@ -220,7 +211,7 @@ const P = {
   capacity: 8,
 };
 
-const ELEV_COLORS = ['#ffd166','#4da3ff','#ff8fa3','#7ce3b1'];
+const ELEV_COLORS = ['#ffd166','#4da3ff','#ff8fa3','#7ce3b1','#c4a7ff','#ffb86b'];
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 let W=0, H=0, DPR=1;
 
@@ -532,7 +523,7 @@ function draw(){
     ctx.strokeStyle = '#232d47';
     ctx.beginPath(); ctx.moveTo(30,y); ctx.lineTo(W-24,y); ctx.stroke();
     ctx.fillStyle = f===1 ? '#ffd166' : '#7f8aa5';
-    ctx.fillText(f===1 ? '1F 大厅' : f+'F', 34, y-5);
+    ctx.fillText(f===1 ? (LANG==='zh' ? '1F 大厅' : '1F Lobby') : f+'F', 34, y-5);
     const d = S.floorDemand[f-1];
     if(d>0.05){
       ctx.fillStyle = 'rgba(77,163,255,'+Math.min(0.9, 0.2+d*0.25)+')';
@@ -571,7 +562,7 @@ function draw(){
       ctx.fillStyle = '#a9ffd4';
       ctx.font = '9px sans-serif';
       const destinations = e.riders.map(p=>p.d+'F').join(' · ');
-      ctx.fillText(e.riders.length+'/'+P.capacity+' 人  → '+destinations, x, ey-5);
+      ctx.fillText(e.riders.length+'/'+P.capacity+(LANG==='zh' ? ' 人  → ' : ' pax  → ')+destinations, x, ey-5);
       ctx.font = '11px sans-serif';
     }
     ctx.fillStyle = '#9fb0d0';
@@ -604,13 +595,13 @@ function draw(){
     });
     const oldest = Math.max(...ps.map(p=>S.t-p.t0));
     ctx.fillStyle = '#8a94ad';
-    ctx.fillText(ps.length+'人 最长'+oldest.toFixed(0)+'s', startX + Math.min(ps.length,8)*40 + 6, y-4);
+    ctx.fillText(LANG==='zh' ? ps.length+'人 最长'+oldest.toFixed(0)+'s' : ps.length+' waiting · longest '+oldest.toFixed(0)+'s', startX + Math.min(ps.length,8)*40 + 6, y-4);
   }
 
   ctx.fillStyle = '#9badc7';
   ctx.font = '11px sans-serif';
-  const goalTxt = P.objective==='wait' ? '快速响应' : '节能少跑';
-  ctx.fillText(P.nElev+' 台 · '+F+' 层 · '+goalTxt, 30, 16);
+  const goalTxt = P.objective==='wait' ? (LANG==='zh' ? '快速响应' : 'Response first') : (LANG==='zh' ? '节能少跑' : 'Energy first');
+  ctx.fillText(LANG==='zh' ? P.nElev+' 台 · '+F+' 层 · '+goalTxt : P.nElev+' cars · '+F+' floors · '+goalTxt, 30, 16);
 }
 
 /* ================= 统计 ================= */
@@ -634,9 +625,13 @@ function updateStats(){
   document.getElementById('gDone').style.setProperty('--p', Math.min(100, S.servedTrips.length*5)+'%');
   const status = document.getElementById('experimentStatus');
   if(experiment.active){
-    status.textContent = '实验进行中 · '+fmtClock(Math.min(S.t,experiment.duration))+' / '+fmtClock(experiment.duration)+' · '+(experiment.objective==='wait'?'响应优先':'节能优先');
+    status.textContent = LANG==='zh'
+      ? '实验进行中 · '+fmtClock(Math.min(S.t,experiment.duration))+' / '+fmtClock(experiment.duration)+' · '+(experiment.objective==='wait'?'响应优先':'节能优先')
+      : 'Experiment running · '+fmtClock(Math.min(S.t,experiment.duration))+' / '+fmtClock(experiment.duration)+' · '+(experiment.objective==='wait'?'Response first':'Energy first');
   } else if(experimentResults.wait || experimentResults.eff){
-    status.textContent = '实验完成 · 已记录 '+experiment.minutes+' 分钟结果，可导出报告';
+    status.textContent = LANG==='zh' ? '实验完成 · 已记录 '+experiment.minutes+' 分钟结果，可导出报告' : 'Experiment complete · '+experiment.minutes+' min result recorded; report ready to export';
+  } else {
+    status.textContent = LANG==='zh' ? '尚未开始实验 · 时间倍速只影响观看速度' : 'Experiment not started · playback speed only changes viewing speed';
   }
 }
 
@@ -656,7 +651,7 @@ function fmtResult(value, digits=1){ return typeof value==='number' ? value.toFi
 function showComparison(response, energy){
   const rows = [
     ['cmpWait','wait',' s',1], ['cmpP95','p95',' s',1], ['cmpDone','done','',0],
-    ['cmpDistance','distance',' 层',1], ['cmpStops','stops','',0],
+    ['cmpDistance','distance',LANG==='zh' ? ' 层' : ' floors',1], ['cmpStops','stops','',0],
   ];
   for(const [id,key,unit,digits] of rows){
     document.getElementById(id+'Response').textContent = fmtResult(response?.[key], digits)+unit;
@@ -678,6 +673,33 @@ function syncExperimentDuration(){
   if(!experiment.active) document.getElementById('btnCompare').textContent = LANG==='zh' ? '开始 '+minutes+' 分钟实验' : 'Start '+minutes+' min experiment';
 }
 
+function syncLocalizedControls(){
+  const patterns = {
+    random: ['日常客流（80% 大厅往返）','Daily traffic (80% lobby trips)'],
+    morning: ['早高峰（上行）','Morning peak (upward)'],
+    evening: ['晚高峰（下行）','Evening peak (downward)'],
+    lunch: ['午间双向','Lunch, both directions'],
+  };
+  const capacities = {
+    6: ['紧凑 · 6 人 / 480kg','Compact · 6 passengers / 480kg'],
+    8: ['标准 · 8 人 / 630kg','Standard · 8 passengers / 630kg'],
+    10: ['高流量 · 10 人 / 800kg','High flow · 10 passengers / 800kg'],
+    13: ['宽敞 · 13 人 / 1000kg','Spacious · 13 passengers / 1000kg'],
+    16: ['大型 · 16 人 / 1250kg','Large · 16 passengers / 1250kg'],
+  };
+  const durations = {
+    5: ['5 分钟 · 快速','5 min · Quick'], 10: ['10 分钟 · 推荐','10 min · Recommended'],
+    15: ['15 分钟','15 min'], 30: ['30 分钟','30 min'], custom: ['自定义','Custom'],
+  };
+  const index = LANG==='zh' ? 0 : 1;
+  document.querySelectorAll('#pattern option').forEach(o=>o.textContent=patterns[o.value][index]);
+  document.querySelectorAll('#capacity option').forEach(o=>o.textContent=capacities[o.value][index]);
+  document.querySelectorAll('#compareDuration option').forEach(o=>o.textContent=durations[o.value][index]);
+  document.getElementById('rateVal').textContent = LANG==='zh' ? P.ratePerMin+' 人/分' : P.ratePerMin+' passengers/min';
+  document.getElementById('btnPause').textContent = S?.paused ? copyFor('resume') : copyFor('pause');
+}
+function copyFor(key){ return translations[LANG][key]; }
+
 function experimentConfig(minutes){
   return JSON.stringify({ minutes, floors:P.floors, elevators:P.nElev, pattern:P.pattern, rate:P.ratePerMin, capacity:P.capacity });
 }
@@ -690,10 +712,10 @@ function startExperiment(){
   reset();
   S.paused = false;
   experiment = { active:true, duration:minutes*60, minutes, objective:P.objective };
-  btn.disabled = true; btn.textContent = '实验运行中…';
+  btn.disabled = true; btn.textContent = LANG==='zh' ? '实验运行中…' : 'Experiment running…';
   document.getElementById('btnExport').disabled = true;
-  document.getElementById('btnPause').textContent = '⏸ 暂停';
-  toast('实验开始：主画布正在实时运行');
+  document.getElementById('btnPause').textContent = T('pause');
+  toast(LANG==='zh' ? '实验开始：主画布正在实时运行' : 'Experiment started: the main canvas is running live');
 }
 function finishExperiment(){
   experiment.active = false;
@@ -701,61 +723,71 @@ function finishExperiment(){
   experimentResults[experiment.objective] = summarizeExperiment();
   showComparison(experimentResults.wait, experimentResults.eff);
   document.getElementById('btnCompare').disabled = false;
-  document.getElementById('btnCompare').textContent = '重新开始 '+experiment.minutes+' 分钟实验';
+  document.getElementById('btnCompare').textContent = LANG==='zh' ? '重新开始 '+experiment.minutes+' 分钟实验' : 'Run '+experiment.minutes+' min experiment again';
   document.getElementById('btnExport').disabled = !(experimentResults.wait || experimentResults.eff);
-  toast('实验完成：可切换目标再次运行或导出报告');
+  toast(LANG==='zh' ? '实验完成：可切换目标再次运行或导出报告' : 'Experiment complete: switch goals to run again or export the report');
 }
 
 function exportMarkdown(){
   if(!(experimentResults.wait || experimentResults.eff)) return;
   const x = experimentResults;
   const config = JSON.parse(x.config);
-  const pattern = {random:'日常客流（80% 大厅往返）', morning:'早高峰（上行）', evening:'晚高峰（下行）', lunch:'午间双向'}[config.pattern];
+  const pattern = LANG==='zh'
+    ? {random:'日常客流（80% 大厅往返）', morning:'早高峰（上行）', evening:'晚高峰（下行）', lunch:'午间双向'}[config.pattern]
+    : {random:'Daily traffic (80% lobby trips)', morning:'Morning peak (upward)', evening:'Evening peak (downward)', lunch:'Lunch, both directions'}[config.pattern];
   const line = (label,key,unit='',digits=1) => '| '+label+' | '+fmtResult(x.wait?.[key],digits)+unit+' | '+fmtResult(x.eff?.[key],digits)+unit+' |';
-  const markdown = [
-    '# City2049 电梯调度实验结果', '',
-    '## 实验设置',
-    '- 实验时长：'+x.minutes+' 分钟',
-    '- 电梯数量：'+config.elevators+' 台',
-    '- 楼层数：'+config.floors+' 层',
-    '- 客流模式：'+pattern,
-    '- 到达率：'+config.rate+' 人/分',
-    '- 轿厢规格：'+config.capacity+' 人',
-    '- 样本控制：两种策略从相同随机种子和相同客流序列开始。', '',
-    '## 结果',
-    '| 指标 | 响应优先 | 节能优先 |',
-    '| --- | ---: | ---: |',
-    line('95% 等待阈值（P95）','p95',' s'), line('平均等待','wait',' s'), line('完成行程','done','',0),
-    line('运行距离','distance',' 层'), line('停靠次数','stops','',0), '',
-    '## 说明',
-    '响应优先更积极响应新呼叫；节能优先倾向合并顺路请求，以减少停靠和空载移动。结果仅适用于本次简化仿真与当前参数。'
+  const markdown = LANG==='zh' ? [
+    '# City2049 电梯调度实验结果', '', '## 实验设置',
+    '- 实验时长：'+x.minutes+' 分钟', '- 电梯数量：'+config.elevators+' 台', '- 楼层数：'+config.floors+' 层', '- 客流模式：'+pattern, '- 到达率：'+config.rate+' 人/分', '- 轿厢规格：'+config.capacity+' 人', '- 样本控制：两种策略从相同随机种子和相同客流序列开始。', '',
+    '## 结果', '| 指标 | 响应优先 | 节能优先 |', '| --- | ---: | ---: |',
+    line('95% 等待阈值（P95）','p95',' s'), line('平均等待','wait',' s'), line('完成行程','done','',0), line('运行距离','distance',' 层'), line('停靠次数','stops','',0), '',
+    '## 说明', '响应优先更积极响应新呼叫；节能优先倾向合并顺路请求，以减少停靠和空载移动。结果仅适用于本次简化仿真与当前参数。'
+  ] : [
+    '# City2049 Elevator Experiment Results', '', '## Configuration',
+    '- Duration: '+x.minutes+' min', '- Elevator cars: '+config.elevators, '- Floors: '+config.floors, '- Traffic pattern: '+pattern, '- Arrival rate: '+config.rate+' passengers/min', '- Car capacity: '+config.capacity+' passengers', '- Sample control: both goals start from the same random seed and arrival sequence.', '',
+    '## Results', '| Metric | Response first | Energy first |', '| --- | ---: | ---: |',
+    line('95th-percentile wait (P95)','p95',' s'), line('Mean wait','wait',' s'), line('Completed trips','done','',0), line('Travel distance','distance',' floors'), line('Stops','stops','',0), '',
+    '## Notes', 'Response first responds more aggressively to new calls. Energy first favors on-route sharing to reduce stops and empty travel. These results apply only to this simplified simulation and its current parameters.'
   ].join('\n');
   const blob = new Blob([markdown], {type:'text/markdown;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url; link.download = 'city2049-elevator-'+x.minutes+'min.md';
   link.click(); URL.revokeObjectURL(url);
-  toast('已导出 Markdown 实验报告');
+  toast(LANG==='zh' ? '已导出 Markdown 实验报告' : 'Markdown experiment report exported');
 }
 
 /* ================= UI ================= */
 let LANG = 'zh';
 const translations = {
-  zh:{ dashboard:'运行仪表',model:'模型与算法',dashboardTitle:'运行仪表盘',waiting:'候梯人数',avgWait:'平均等待 / s',completed:'完成行程',settings:'仿真设置',cars:'电梯数量',floors:'楼层数',traffic:'客流模式',goal:'调度目标',response:'响应优先',energy:'节能优先',capacity:'轿厢规格',reset:'↺ 重置仿真',modelTitle:'模型与算法',subtitle:'Group Control · 群控电梯实时仿真',eyebrow:'CITY2049 · URBAN SYSTEMS'},
-  en:{ dashboard:'Dashboard',model:'Model & Algorithm',dashboardTitle:'Live Dashboard',waiting:'Waiting',avgWait:'Avg wait / s',completed:'Completed',settings:'Simulation Settings',cars:'Elevator cars',floors:'Floors',traffic:'Traffic pattern',goal:'Dispatch goal',response:'Response first',energy:'Energy first',capacity:'Car capacity',reset:'↺ Reset simulation',modelTitle:'Model & Algorithm',subtitle:'Group Control · Live Elevator Simulation',eyebrow:'CITY2049 · URBAN SYSTEMS'}
+  zh:{
+    dashboard:'运行仪表',model:'模型与算法',dashboardTitle:'运行仪表盘',waiting:'候梯人数',avgWait:'平均等待 / s',completed:'完成行程',boarded:'已上梯',longestWait:'最长等待',simulationTime:'仿真时间',settings:'仿真设置',cars:'电梯数量',floors:'楼层数',traffic:'客流模式',goal:'调度目标',response:'响应优先',energy:'节能优先',capacity:'轿厢规格',arrivalRate:'到达率',speed:'时间倍速',reset:'↺ 重置仿真',pause:'⏸ 暂停',resume:'▶ 继续',modelTitle:'模型与算法',brandTitle:'电梯实时仿真',subtitle:'城市垂直交通 · 群控仿真',eyebrow:'CITY2049 · 城市系统',
+    experimentIntro:'选择当前目标后开始运行。实验会在主画布中实时进行，到达设定时长后自动暂停。切换目标并重新运行，可在下表比较同样本结果。',duration:'模拟时长',customDuration:'自定义时长',minutes:'分钟',metric:'指标',meanWait:'平均等待',p95:'95% 等待阈值（P95）',completedTrips:'完成行程',travelDistance:'运行距离',stops:'停靠次数',p95Note:'95% 等待阈值（P95）表示：95% 的已上梯乘客等待时间都不超过这个值；它用来观察少数人是否等得特别久。',export:'↓ 导出 Markdown 报告',readingGuide:'读图提示',readingGuideText:'黄色圆点是候梯乘客，旁边的 → 楼层表示目的地；绿色圆点表示轿厢内乘客。每台车都可接走方向一致且未满载的候梯者。',
+    demandTitle:'需求生成 · 多久出现一位乘客？',demandText:'到达率越高，平均间隔越短。公式用一个随机数生成下一位乘客的到达间隔。',demandSymbols:'Δt：下一位乘客的到达间隔（秒）；λ：到达率（人/分）；U：0 到 1 的随机数。',etaTitle:'预计到达时间 · 哪台车能更快到？',etaText:'把“还要走多远、途中要停几次、车里已有多少人”换算为派梯成本。这一式对应当前代码的基础 ETA。',etaSymbols:'T̂ₑ(f)：电梯 e 到楼层 f 的基础预计时间；Dₑ：预计路线距离；v：速度；Nₑ：计划停靠数；t₍door₎：开关门耗时；Rₑ：当前载客数。0.9 与 0.55 是本演示的规则权重（秒）。',assignmentTitle:'派梯与容量 · 谁来接这组乘客？',assignmentText:'对同一楼层、同一方向的呼叫，选择调整后成本最小的电梯；满载车会被加上较大成本，但“不能上车”是服务阶段的硬约束。',assignmentSymbols:'Cₑ(f)：加入方向、满载、等待时长等修正后的派梯成本；e*：被选中的电梯；Rₑ：当前载客数；C：轿厢容量。代码中满载车仍可被考虑，但会被强烈惩罚；真正登梯时严格要求 Rₑ < C。',objectiveTitle:'目标权衡 · 快一点还是少跑一点？',objectiveText:'两种目标不是全局优化器，而是对 ETA 成本的不同规则修正。以下两式与当前派梯权重一一对应。',objectiveSymbols:'C：成本（越小越优）；W：该组乘客已等待秒数；m₍route₎：已有同层停靠时为 0.25，否则为 1；m₍dir₎：顺方向时为 0.7，否则为 1；I₍new₎：新增停靠时为 1，否则为 0。节能优先由此鼓励顺路拼单、减少新停靠。',modelNote:'现实参数对应：到达率 λ、速度 v、开门时间 t_door、轿厢容量 C、楼层数 F。切换到此处不会暂停或重置左侧正在运行的仿真；这里使用规则式启发式，适合用于解释和比较，不代表真实楼宇控制器的全局最优结果。'
+  },
+  en:{
+    dashboard:'Dashboard',model:'Model & Algorithm',dashboardTitle:'Live Dashboard',waiting:'Waiting',avgWait:'Avg wait / s',completed:'Completed',boarded:'Boarded',longestWait:'Longest wait',simulationTime:'Simulation time',settings:'Simulation Settings',cars:'Elevator cars',floors:'Floors',traffic:'Traffic pattern',goal:'Dispatch goal',response:'Response first',energy:'Energy first',capacity:'Car capacity',arrivalRate:'Arrival rate',speed:'Playback speed',reset:'↺ Reset simulation',pause:'⏸ Pause',resume:'▶ Resume',modelTitle:'Model & Algorithm',brandTitle:'Elevator',subtitle:'Urban Vertical Mobility · Group Control Simulation',eyebrow:'CITY2049 · URBAN SYSTEMS',
+    experimentIntro:'Run the currently selected goal in the live canvas. The simulation pauses automatically at the chosen duration; run the other goal to compare the same sample below.',duration:'Simulation duration',customDuration:'Custom duration',minutes:'min',metric:'Metric',meanWait:'Mean wait',p95:'95th-percentile wait (P95)',completedTrips:'Completed trips',travelDistance:'Travel distance',stops:'Stops',p95Note:'The 95th-percentile wait (P95) means that 95% of boarded passengers waited no longer than this value. It helps reveal whether a small number of passengers waited unusually long.',export:'↓ Export Markdown report',readingGuide:'Reading the simulation',readingGuideText:'Yellow dots are waiting passengers; the floor beside → is each destination. Green dots are passengers inside a car. Any car can board waiting passengers travelling in the same direction when it has capacity.',
+    demandTitle:'Demand generation · When does the next passenger appear?',demandText:'A higher arrival rate means a shorter average interval. The formula samples the next arrival interval from one random number.',demandSymbols:'Δt: interval until the next passenger arrives (s); λ: arrival rate (passengers/min); U: random number from 0 to 1.',etaTitle:'Estimated arrival time · Which car can get there sooner?',etaText:'Distance still to travel, planned stops, and current riders are converted into a dispatch cost. This is the base ETA used by the current code.',etaSymbols:'T̂ₑ(f): base time for car e to reach floor f; Dₑ: projected route distance; v: speed; Nₑ: planned stops; t₍door₎: door-cycle time; Rₑ: riders aboard. 0.9 and 0.55 are demonstration weights in seconds.',assignmentTitle:'Assignment & capacity · Which car serves this group?',assignmentText:'For a call on the same floor and in the same direction, choose the car with the lowest adjusted cost. A full car receives a large penalty, while boarding capacity remains a hard service constraint.',assignmentSymbols:'Cₑ(f): adjusted dispatch cost including direction, capacity, and waiting time; e*: selected car; Rₑ: riders aboard; C: car capacity. Full cars may still be considered with a strong penalty, but boarding strictly requires Rₑ < C.',objectiveTitle:'Objective trade-off · Faster response or less travel?',objectiveText:'The two objectives are rule-based adjustments to ETA cost, not global optimizers. The equations correspond directly to the current dispatch weights.',objectiveSymbols:'C: cost (lower is better); W: seconds this passenger group has waited; m₍route₎: 0.25 for an existing stop at that floor, otherwise 1; m₍dir₎: 0.7 when travelling in the same direction, otherwise 1; I₍new₎: 1 for a new stop, otherwise 0. Energy first therefore rewards on-route sharing and fewer new stops.',modelNote:'The real-world counterparts are arrival rate λ, speed v, door-cycle time t_door, car capacity C, and floor count F. Opening this view neither pauses nor resets the running simulation. This is a rule-based heuristic for explanation and comparison, not a globally optimal building controller.'
+  }
 };
+const T = key => translations[LANG][key];
 function applyLanguage(){
   const copy = translations[LANG];
   document.documentElement.lang = LANG==='zh' ? 'zh-CN' : 'en';
-  document.title = LANG==='zh' ? 'Elevator Group · City2049' : 'Elevator Group · City2049';
+  document.title = 'Elevator · City2049';
   document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = copy[el.dataset.i18n]; });
+  document.getElementById('brandTitle').textContent = copy.brandTitle;
   document.getElementById('subtitle').textContent = copy.subtitle;
   document.getElementById('eyebrow').textContent = copy.eyebrow;
+  document.getElementById('boardingConstraint').textContent = LANG==='zh' ? '且上车需' : 'and boarding requires';
+  syncLocalizedControls();
   document.getElementById('langToggle').textContent = LANG==='zh' ? 'EN' : '中文';
   document.getElementById('objHint').textContent = P.objective==='eff'
     ? (LANG==='zh' ? '尽量合并顺路请求，并减少停靠与空载移动；乘客可能会多等一会。' : 'Prefer shared, on-route calls and fewer empty movements; passengers may wait longer.')
     : (LANG==='zh' ? '优先缩短乘客等待时间，电梯会更积极地响应新的呼叫。' : 'Respond to new calls more aggressively to reduce passenger waiting.');
   syncExperimentDuration();
+  updateStats();
 }
 const toast = (msg)=>{
   const el = document.getElementById('toast');
@@ -771,7 +803,7 @@ function invalidateComparison(){
   document.getElementById('compareResult').hidden = true;
   document.getElementById('btnExport').disabled = true;
   document.getElementById('btnCompare').disabled = false;
-  document.getElementById('experimentStatus').textContent = '尚未开始实验 · 时间倍速只影响观看速度';
+  document.getElementById('experimentStatus').textContent = LANG==='zh' ? '尚未开始实验 · 时间倍速只影响观看速度' : 'Experiment not started · playback speed only changes viewing speed';
 }
 document.getElementById('viewTabs').addEventListener('click', e=>{
   if(!e.target.dataset.view) return;
@@ -783,33 +815,33 @@ document.getElementById('viewTabs').addEventListener('click', e=>{
 document.getElementById('langToggle').addEventListener('click', ()=>{ LANG = LANG==='zh' ? 'en' : 'zh'; applyLanguage(); });
 document.getElementById('elevSeg').addEventListener('click', e=>{
   if(e.target.dataset.n){ P.nElev = +e.target.dataset.n;
-    reset(); invalidateComparison(); syncLevelUI(); toast('已切换为 '+P.nElev+' 台电梯'); }
+    reset(); invalidateComparison(); syncLevelUI(); toast(LANG==='zh' ? '已切换为 '+P.nElev+' 台电梯' : 'Switched to '+P.nElev+' elevator cars'); }
 });
 document.getElementById('floorSeg').addEventListener('click', e=>{
   if(e.target.dataset.n){ P.floors = +e.target.dataset.n;
     [...e.currentTarget.children].forEach(b=>b.classList.toggle('on', b===e.target));
-    reset(); invalidateComparison(); toast('已切换为 '+P.floors+' 层'); }
+    reset(); invalidateComparison(); toast(LANG==='zh' ? '已切换为 '+P.floors+' 层' : 'Switched to '+P.floors+' floors'); }
 });
-document.getElementById('pattern').addEventListener('change', e=>{ P.pattern=e.target.value; reset(); invalidateComparison(); toast('已重置为：'+e.target.selectedOptions[0].text); });
+document.getElementById('pattern').addEventListener('change', e=>{ P.pattern=e.target.value; reset(); invalidateComparison(); toast((LANG==='zh' ? '已重置为：' : 'Reset for: ')+e.target.selectedOptions[0].text); });
 document.getElementById('objSeg').addEventListener('click', e=>{
   if(!e.target.dataset.n) return;
   P.objective = e.target.dataset.n;
   [...e.currentTarget.children].forEach(b=>b.classList.toggle('on', b===e.target));
   const energy = P.objective==='eff';
   document.getElementById('objHint').textContent = energy
-    ? '尽量合并顺路请求，并减少停靠与空载移动；乘客可能会多等一会。'
-    : '优先缩短乘客等待时间，电梯会更积极地响应新的呼叫。';
-  toast(energy ? '调度目标：节能优先' : '调度目标：响应优先');
+    ? (LANG==='zh' ? '尽量合并顺路请求，并减少停靠与空载移动；乘客可能会多等一会。' : 'Prefer shared, on-route calls and fewer empty movements; passengers may wait longer.')
+    : (LANG==='zh' ? '优先缩短乘客等待时间，电梯会更积极地响应新的呼叫。' : 'Respond to new calls more aggressively to reduce passenger waiting.');
+  toast(energy ? (LANG==='zh' ? '调度目标：节能优先' : 'Dispatch goal: Energy first') : (LANG==='zh' ? '调度目标：响应优先' : 'Dispatch goal: Response first'));
 });
 document.getElementById('rate').addEventListener('input', e=>{
   P.ratePerMin = +e.target.value;
-  document.getElementById('rateVal').textContent = P.ratePerMin+' 人/分';
+  document.getElementById('rateVal').textContent = LANG==='zh' ? P.ratePerMin+' 人/分' : P.ratePerMin+' passengers/min';
 });
-document.getElementById('rate').addEventListener('change', ()=>{ reset(); invalidateComparison(); toast('已用新的到达率重置'); });
+document.getElementById('rate').addEventListener('change', ()=>{ reset(); invalidateComparison(); toast(LANG==='zh' ? '已用新的到达率重置' : 'Reset with the new arrival rate'); });
 document.getElementById('capacity').addEventListener('input', e=>{
   P.capacity = +e.target.value;
 });
-document.getElementById('capacity').addEventListener('change', ()=>{ reset(); invalidateComparison(); toast('已切换轿厢规格并重置'); });
+document.getElementById('capacity').addEventListener('change', ()=>{ reset(); invalidateComparison(); toast(LANG==='zh' ? '已切换轿厢规格并重置' : 'Car capacity changed and simulation reset'); });
 document.getElementById('compareDuration').addEventListener('change', ()=>{ syncExperimentDuration(); invalidateComparison(); });
 document.getElementById('customDuration').addEventListener('input', ()=>{ syncExperimentDuration(); invalidateComparison(); });
 document.getElementById('speed').addEventListener('input', e=>{
@@ -818,9 +850,9 @@ document.getElementById('speed').addEventListener('input', e=>{
 });
 document.getElementById('btnPause').addEventListener('click', e=>{
   S.paused = !S.paused;
-  e.target.textContent = S.paused ? '▶ 继续' : '⏸ 暂停';
+  e.target.textContent = S.paused ? T('resume') : T('pause');
 });
-document.getElementById('btnReset').addEventListener('click', ()=>{ reset(); invalidateComparison(); toast('已重置'); });
+document.getElementById('btnReset').addEventListener('click', ()=>{ reset(); invalidateComparison(); toast(LANG==='zh' ? '已重置' : 'Simulation reset'); });
 document.getElementById('btnCompare').addEventListener('click', startExperiment);
 document.getElementById('btnExport').addEventListener('click', exportMarkdown);
 
