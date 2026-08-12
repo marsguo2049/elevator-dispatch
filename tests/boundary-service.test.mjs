@@ -25,7 +25,7 @@ function loadSimulator(){
     requestAnimationFrame() {}, setTimeout: () => 0, clearTimeout() {},
   };
   const exposed = script.replace(
-    /reset\(\);\s*syncLevelUI\(\);\s*requestAnimationFrame\(loop\);/,
+    /reset\(\);\s*syncLevelUI\(\);\s*syncExperimentDuration\(\);\s*requestAnimationFrame\(loop\);/,
     "globalThis.__sim = { P, reset, stepElevator, runFixedScenario, getState: () => S };",
   );
   vm.runInNewContext(exposed, context);
@@ -139,8 +139,8 @@ test("fixed-duration experiments are reproducible and preserve the live simulati
   sim.P.floors = 14; sim.P.nElev = 2; sim.P.ratePerMin = 6; sim.reset();
   const liveState = sim.getState();
 
-  const first = sim.runFixedScenario("wait");
-  const second = sim.runFixedScenario("wait");
+  const first = sim.runFixedScenario("wait", 10);
+  const second = sim.runFixedScenario("wait", 10);
 
   assert.deepEqual(first, second);
   assert.equal(sim.getState(), liveState);
