@@ -16,8 +16,17 @@ test("simulator keeps a focused set of live controls", () => {
   assert.match(html, /id="pattern"/);
   assert.match(html, /id="capacity"/);
   assert.match(html, /id="btnPause"/);
-  assert.doesNotMatch(html, /运行同样本 A\/B 对比/);
   assert.doesNotMatch(html, /id="seed"/);
+});
+
+test("simulator compares both goals over the same fixed experiment", () => {
+  assert.match(html, /同样本策略对比/);
+  assert.match(html, /固定 15 分钟/);
+  assert.match(html, /id="btnCompare"/);
+  assert.match(html, /function runFixedScenario/);
+  assert.match(html, /相同随机种子开始/);
+  assert.match(html, /P95 等待/);
+  assert.match(html, /运行距离/);
 });
 
 test("simulator explains and exposes response and energy dispatch goals", () => {
