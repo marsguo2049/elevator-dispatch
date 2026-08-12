@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vertical Flow · Elevator Group Control · City2049</title>
+<title>Elevator Group · City2049</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   :root { color-scheme:dark; }
@@ -13,14 +13,16 @@
   #canvasWrap { flex:1; min-width:0; position:relative; overflow:hidden; background:radial-gradient(circle at 35% 12%,#173d72 0%,#0d1b31 38%,#08111f 82%); }
   #canvasWrap::before { content:""; position:absolute; inset:0; pointer-events:none; background-image:linear-gradient(rgba(157,202,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(157,202,255,.04) 1px,transparent 1px); background-size:36px 36px; }
   canvas { display:block; }
-  #panel { width:380px; padding:22px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; background:#0d1728; border-left:1px solid #213655; box-shadow:-16px 0 40px #02071340; }
+  #panel { width:clamp(400px,34vw,560px); min-width:360px; padding:clamp(18px,2vw,26px); overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column; gap:14px; background:#0d1728; border-left:1px solid #213655; box-shadow:-16px 0 40px #02071340; }
   .eyebrow { color:#75c4ff; font-size:10px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
   h1 { margin-top:6px; font-size:27px; line-height:1; font-weight:800; letter-spacing:.015em; text-transform:uppercase; }
   .subtitle { margin-top:9px; color:#9badc7; font-size:11px; line-height:1.5; letter-spacing:.015em; }
+  .headerRow { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .langBtn { flex:none; padding:5px 8px; font-size:10px; color:#9ed7ff; background:#12243c; }
   .viewTabs { display:flex; gap:5px; padding:4px; border:1px solid #25405f; border-radius:10px; background:#0b1628; }
   .viewTab { flex:1; border:0; border-radius:7px; padding:7px; background:transparent; color:#8fa5c3; font-size:11px; cursor:pointer; }
   .viewTab.on { background:#294869; color:#edf7ff; font-weight:800; }
-  .card { border:1px solid #203756; border-radius:16px; padding:15px; background:linear-gradient(145deg,#14233b,#101b2e); }
+  .card { min-width:0; border:1px solid #203756; border-radius:16px; padding:15px; background:linear-gradient(145deg,#14233b,#101b2e); }
   .card h2 { margin-bottom:13px; color:#a9c1df; font-size:10px; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
   .row { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:30px; font-size:12px; }
   .row + .row { margin-top:9px; padding-top:9px; border-top:1px solid #203451; }
@@ -71,7 +73,8 @@
   .metricNote { margin-top:9px; color:#7f96b4; font-size:9px; line-height:1.5; }
   .experimentStatus { margin-top:10px; color:#8ea5c3; font-size:10px; font-variant-numeric:tabular-nums; }
   #toast { position:absolute; left:50%; bottom:24px; transform:translateX(-50%); padding:8px 14px; border:1px solid #3b5879; border-radius:999px; background:rgba(15,28,48,.94); font-size:12px; opacity:0; transition:opacity .25s; pointer-events:none; }
-  @media (max-width:760px) { body { overflow:auto; } #app { height:auto; min-height:100dvh; flex-direction:column; } #canvasWrap { height:49svh; min-height:320px; flex:none; } #panel { width:100%; overflow:visible; padding:16px; border-left:0; border-top:1px solid #213655; } h1 { font-size:23px; } .card { padding:14px; } }
+  @media (max-width:1100px) and (min-width:761px) { #panel { width:clamp(380px,42vw,480px); min-width:0; padding:18px; } .formula math { font-size:clamp(.72rem,2.25vw,.92rem); } }
+  @media (max-width:760px) { body { overflow:auto; } #app { height:auto; min-height:100dvh; flex-direction:column; } #canvasWrap { height:49svh; min-height:320px; flex:none; } #panel { width:100%; min-width:0; overflow:visible; padding:16px; border-left:0; border-top:1px solid #213655; } h1 { font-size:23px; } .card { padding:14px; } }
 </style>
 </head>
 <body>
@@ -79,23 +82,23 @@
   <div id="canvasWrap"><canvas id="cv"></canvas><div id="toast"></div></div>
   <div id="panel">
     <header>
-      <div class="eyebrow">CITY2049 · URBAN SYSTEMS</div>
-      <h1>Vertical Flow</h1>
-      <p class="subtitle">Elevator Group Control · 群控电梯实时仿真</p>
+      <div class="headerRow"><div class="eyebrow" id="eyebrow">CITY2049 · URBAN SYSTEMS</div><button class="btn langBtn" id="langToggle">EN</button></div>
+      <h1>Elevator Group</h1>
+      <p class="subtitle" id="subtitle">Group Control · 群控电梯实时仿真</p>
     </header>
 
     <div class="viewTabs" id="viewTabs">
-      <button class="viewTab on" data-view="dashboard">运行仪表</button>
-      <button class="viewTab" data-view="model">模型与算法</button>
+      <button class="viewTab on" data-view="dashboard" data-i18n="dashboard">运行仪表</button>
+      <button class="viewTab" data-view="model" data-i18n="model">模型与算法</button>
     </div>
 
     <div id="simulatorView">
     <div class="card dash">
-      <h2>运行仪表盘</h2>
+      <h2 data-i18n="dashboardTitle">运行仪表盘</h2>
       <div class="gauges">
-        <div class="gauge" id="gWaiting" style="--accent:#ffd166"><div><strong id="stWaiting">0</strong><span>候梯人数</span></div></div>
-        <div class="gauge" id="gWait" style="--accent:#72c6ff"><div><strong id="stAvgWait">–</strong><span>平均等待 / s</span></div></div>
-        <div class="gauge" id="gDone" style="--accent:#7ce3b1"><div><strong id="stDone">0</strong><span>完成行程</span></div></div>
+        <div class="gauge" id="gWaiting" style="--accent:#ffd166"><div><strong id="stWaiting">0</strong><span data-i18n="waiting">候梯人数</span></div></div>
+        <div class="gauge" id="gWait" style="--accent:#72c6ff"><div><strong id="stAvgWait">–</strong><span data-i18n="avgWait">平均等待 / s</span></div></div>
+        <div class="gauge" id="gDone" style="--accent:#7ce3b1"><div><strong id="stDone">0</strong><span data-i18n="completed">完成行程</span></div></div>
       </div>
       <div class="miniStats">
         <div class="mini"><span>已上梯</span><strong id="stServed">0</strong></div>
@@ -105,21 +108,21 @@
     </div>
 
     <div class="card">
-      <h2>仿真设置</h2>
-      <div class="row"><label>电梯数量</label>
+      <h2 data-i18n="settings">仿真设置</h2>
+      <div class="row"><label data-i18n="cars">电梯数量</label>
         <div class="seg" id="elevSeg">
           <button class="btn" data-n="1">1 台</button>
           <button class="btn on" data-n="2">2 台</button>
           <button class="btn" data-n="4">4 台</button>
         </div>
       </div>
-      <div class="row"><label>楼层数</label>
+      <div class="row"><label data-i18n="floors">楼层数</label>
         <div class="seg" id="floorSeg">
           <button class="btn on" data-n="14">14 层</button>
           <button class="btn" data-n="20">20 层</button>
         </div>
       </div>
-      <div class="row"><label>客流模式</label>
+      <div class="row"><label data-i18n="traffic">客流模式</label>
         <select id="pattern">
           <option value="random">日常客流（80% 大厅往返）</option>
           <option value="morning">早高峰（上行）</option>
@@ -127,17 +130,17 @@
           <option value="lunch">午间双向</option>
         </select>
       </div>
-      <div class="row"><label>调度目标</label>
+      <div class="row"><label data-i18n="goal">调度目标</label>
         <div class="seg" id="objSeg">
-          <button class="btn on" data-n="wait">响应优先</button>
-          <button class="btn" data-n="eff">节能优先</button>
+          <button class="btn on" data-n="wait" data-i18n="response">响应优先</button>
+          <button class="btn" data-n="eff" data-i18n="energy">节能优先</button>
         </div>
       </div>
       <p class="objectiveNote" id="objHint">优先缩短乘客等待时间，电梯会更积极地响应新的呼叫。</p>
       <div class="row"><label>到达率 <span class="val" id="rateVal">6 人/分</span></label>
         <input type="range" id="rate" min="1" max="20" value="6">
       </div>
-      <div class="row"><label>轿厢规格</label>
+      <div class="row"><label data-i18n="capacity">轿厢规格</label>
         <select id="capacity">
           <option value="6">紧凑 · 6 人 / 480kg</option>
           <option value="8" selected>标准 · 8 人 / 630kg</option>
@@ -151,7 +154,7 @@
       </div>
       <div class="controls" style="margin-top:14px;">
         <button class="btn" id="btnPause">⏸ 暂停</button>
-        <button class="btn primary" id="btnReset">↺ 重置仿真</button>
+        <button class="btn primary" id="btnReset" data-i18n="reset">↺ 重置仿真</button>
       </div>
     </div>
 
@@ -190,7 +193,7 @@
 
     <div id="modelView" hidden>
       <div class="card">
-        <h2>模型与算法</h2>
+        <h2 data-i18n="modelTitle">模型与算法</h2>
         <div class="algorithm">
           <div class="algoStep"><b>需求生成 · 多久出现一位乘客？</b><span>到达率越高，平均间隔越短。公式用一个随机数生成下一位乘客的到达间隔。</span><div class="formula"><math display="block"><semantics><mrow><mi>Δt</mi><mo>=</mo><mfrac><mrow><mo>−</mo><mi>ln</mi><mo>(</mo><mn>1</mn><mo>−</mo><mi>U</mi><mo>)</mo></mrow><mrow><mi>λ</mi><mo>/</mo><mn>60</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">\Delta t = -\ln(1-U)/(\lambda/60)</annotation></semantics></math></div><span class="symbolNote">Δt：下一位乘客的到达间隔（秒）；λ：到达率（人/分）；U：0 到 1 的随机数。</span></div>
           <div class="algoStep"><b>预计到达时间 · 哪台车能更快到？</b><span>把“还要走多远、途中要停几次、车里已有多少人”换算为派梯成本。这一式对应当前代码的基础 ETA。</span><div class="formula"><math display="block"><semantics><mrow><msub><mover><mi>T</mi><mo>^</mo></mover><mi>e</mi></msub><mo>(</mo><mi>f</mi><mo>)</mo><mo>=</mo><mfrac><msub><mi>D</mi><mi>e</mi></msub><mi>v</mi></mfrac><mo>+</mo><msub><mi>N</mi><mi>e</mi></msub><mo>(</mo><msub><mi>t</mi><mi>door</mi></msub><mo>+</mo><mn>0.9</mn><mo>)</mo><mo>+</mo><mn>0.55</mn><msub><mi>R</mi><mi>e</mi></msub></mrow><annotation encoding="application/x-tex">\hat{T}_e(f)=D_e/v+N_e(t_{door}+0.9)+0.55R_e</annotation></semantics></math></div><span class="symbolNote">T̂ₑ(f)：电梯 e 到楼层 f 的基础预计时间；Dₑ：预计路线距离；v：速度；Nₑ：计划停靠数；t<sub>door</sub>：开关门耗时；Rₑ：当前载客数。0.9 与 0.55 是本演示的规则权重（秒）。</span></div>
@@ -671,8 +674,8 @@ function syncExperimentDuration(){
   const custom = document.getElementById('compareDuration').value==='custom';
   document.getElementById('customDurationRow').hidden = !custom;
   const minutes = getExperimentMinutes();
-  document.getElementById('compareTitle').textContent = '策略实验 · '+minutes+' 分钟';
-  if(!experiment.active) document.getElementById('btnCompare').textContent = '开始 '+minutes+' 分钟实验';
+  document.getElementById('compareTitle').textContent = LANG==='zh' ? '策略实验 · '+minutes+' 分钟' : 'Strategy Experiment · '+minutes+' min';
+  if(!experiment.active) document.getElementById('btnCompare').textContent = LANG==='zh' ? '开始 '+minutes+' 分钟实验' : 'Start '+minutes+' min experiment';
 }
 
 function experimentConfig(minutes){
@@ -736,6 +739,24 @@ function exportMarkdown(){
 }
 
 /* ================= UI ================= */
+let LANG = 'zh';
+const translations = {
+  zh:{ dashboard:'运行仪表',model:'模型与算法',dashboardTitle:'运行仪表盘',waiting:'候梯人数',avgWait:'平均等待 / s',completed:'完成行程',settings:'仿真设置',cars:'电梯数量',floors:'楼层数',traffic:'客流模式',goal:'调度目标',response:'响应优先',energy:'节能优先',capacity:'轿厢规格',reset:'↺ 重置仿真',modelTitle:'模型与算法',subtitle:'Group Control · 群控电梯实时仿真',eyebrow:'CITY2049 · URBAN SYSTEMS'},
+  en:{ dashboard:'Dashboard',model:'Model & Algorithm',dashboardTitle:'Live Dashboard',waiting:'Waiting',avgWait:'Avg wait / s',completed:'Completed',settings:'Simulation Settings',cars:'Elevator cars',floors:'Floors',traffic:'Traffic pattern',goal:'Dispatch goal',response:'Response first',energy:'Energy first',capacity:'Car capacity',reset:'↺ Reset simulation',modelTitle:'Model & Algorithm',subtitle:'Group Control · Live Elevator Simulation',eyebrow:'CITY2049 · URBAN SYSTEMS'}
+};
+function applyLanguage(){
+  const copy = translations[LANG];
+  document.documentElement.lang = LANG==='zh' ? 'zh-CN' : 'en';
+  document.title = LANG==='zh' ? 'Elevator Group · City2049' : 'Elevator Group · City2049';
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = copy[el.dataset.i18n]; });
+  document.getElementById('subtitle').textContent = copy.subtitle;
+  document.getElementById('eyebrow').textContent = copy.eyebrow;
+  document.getElementById('langToggle').textContent = LANG==='zh' ? 'EN' : '中文';
+  document.getElementById('objHint').textContent = P.objective==='eff'
+    ? (LANG==='zh' ? '尽量合并顺路请求，并减少停靠与空载移动；乘客可能会多等一会。' : 'Prefer shared, on-route calls and fewer empty movements; passengers may wait longer.')
+    : (LANG==='zh' ? '优先缩短乘客等待时间，电梯会更积极地响应新的呼叫。' : 'Respond to new calls more aggressively to reduce passenger waiting.');
+  syncExperimentDuration();
+}
 const toast = (msg)=>{
   const el = document.getElementById('toast');
   el.textContent = msg; el.style.opacity = 1;
@@ -759,6 +780,7 @@ document.getElementById('viewTabs').addEventListener('click', e=>{
   document.getElementById('modelView').hidden = !model;
   [...e.currentTarget.children].forEach(b=>b.classList.toggle('on', b===e.target));
 });
+document.getElementById('langToggle').addEventListener('click', ()=>{ LANG = LANG==='zh' ? 'en' : 'zh'; applyLanguage(); });
 document.getElementById('elevSeg').addEventListener('click', e=>{
   if(e.target.dataset.n){ P.nElev = +e.target.dataset.n;
     reset(); invalidateComparison(); syncLevelUI(); toast('已切换为 '+P.nElev+' 台电梯'); }
@@ -805,6 +827,7 @@ document.getElementById('btnExport').addEventListener('click', exportMarkdown);
 reset();
 syncLevelUI();
 syncExperimentDuration();
+applyLanguage();
 requestAnimationFrame(loop);
 </script>
 </body>
