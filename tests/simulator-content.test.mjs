@@ -24,9 +24,10 @@ test("simulator exposes the single-elevator and group-control learning levels", 
   assert.match(html, /totalDistance/);
 });
 
-test("opposite-direction calls are released after an incompatible stop", () => {
-  assert.match(html, /该车本次运行方向无法接走的乘客必须释放/);
-  assert.match(html, /for\(const p of candidates\) p\.assigned = -1/);
+test("lobby calls remain shared rather than locking each passenger to one car", () => {
+  assert.match(html, /现实中的大厅呼叫是共享的/);
+  assert.match(html, /p\.state==='wait' && p\.o===floor/);
+  assert.doesNotMatch(html, /p\.o===floor && p\.assigned===e\.id/);
 });
 
 test("daily demand emphasizes lobby-to-floor travel and displays destinations", () => {
@@ -41,6 +42,8 @@ test("simulator exposes a configurable hard elevator capacity", () => {
   assert.match(html, /P\.capacity = \+e\.target\.value/);
   assert.match(html, /if\(e\.riders\.length>=P\.capacity\) break/);
   assert.match(html, /e\.riders\.length\+'\/'\+P\.capacity\+' 人/);
+  assert.match(html, /标准 · 8 人 \/ 630kg/);
+  assert.match(html, /function carWidth\(\)/);
 });
 
 test("inline simulator script parses", () => {
