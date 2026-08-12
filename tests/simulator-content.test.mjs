@@ -19,15 +19,16 @@ test("simulator keeps a focused set of live controls", () => {
   assert.doesNotMatch(html, /id="seed"/);
 });
 
-test("simulator compares both goals over the same fixed experiment", () => {
-  assert.match(html, /同样本策略对比/);
+test("simulator runs a visible, configurable strategy experiment", () => {
+  assert.match(html, /策略实验/);
   assert.match(html, /5 分钟 · 快速/);
   assert.match(html, /10 分钟 · 推荐/);
   assert.match(html, /自定义时长/);
   assert.match(html, /id="btnCompare"/);
   assert.match(html, /id="btnExport"/);
-  assert.match(html, /function runFixedScenario/);
-  assert.match(html, /相同随机种子开始/);
+  assert.match(html, /function startExperiment/);
+  assert.match(html, /function finishExperiment/);
+  assert.match(html, /实验进行中/);
   assert.match(html, /P95 等待/);
   assert.match(html, /运行距离/);
 });
@@ -45,6 +46,8 @@ test("simulator provides a non-blocking model view", () => {
   assert.match(html, /模型与算法/);
   assert.match(html, /id="modelView"/);
   assert.match(html, /切换到此处不会暂停或重置/);
+  assert.match(html, /T̂ₑ\(f\)/);
+  assert.match(html, /arg minₑ/);
   assert.match(html, /id="viewTabs"/);
 });
 
