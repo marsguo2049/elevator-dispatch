@@ -80,8 +80,14 @@
   @media (max-width: 760px) {
     body { overflow:auto; }
     #app { min-height:100dvh; height:auto; flex-direction:column; }
-    #canvasWrap { height:58dvh; min-height:420px; flex:none; }
-    #panel { width:100%; border-left:0; border-top:1px solid #293553; overflow:visible; }
+    #canvasWrap { height:52svh; min-height:340px; flex:none; }
+    #panel { width:100%; border-left:0; border-top:1px solid #30466a; overflow:visible; padding:16px; gap:10px; }
+    .card { padding:12px; }
+    h1 { font-size:21px; }
+    .row { margin:7px 0; }
+    input[type=range] { width:118px; }
+    .modelGrid { gap:6px; }
+    .modelItem { min-height:0; padding:8px; }
   }
 </style>
 </head>
@@ -103,7 +109,7 @@
         <div class="modelItem"><b>评价目标</b><span>等待与全程时间更短，同时减少停靠与无效移动。</span></div>
         <div class="modelItem"><b>主要约束</b><span>载客容量、速度与门时间固定、上下行方向一致。</span></div>
       </div>
-      <div class="notice">这不是全局最优求解器。系统使用可解释的 ETA 成本规则与需求感知驻停，并与“最近可达车”基准做同样本仿真比较。</div>
+      <div class="notice">这不是全局最优求解器。电梯会对呼梯进行响应规划，但到站后，方向一致且未满载时，任何候梯乘客都可以上车。</div>
     </div>
 
     <div class="card">
@@ -141,8 +147,14 @@
       <div class="row"><label>到达率 <span class="val" id="rateVal">6 人/分</span></label>
         <input type="range" id="rate" min="1" max="20" value="6">
       </div>
-      <div class="row"><label>轿厢容量 <span class="val" id="capacityVal">8 人</span></label>
-        <input type="range" id="capacity" min="2" max="16" value="8">
+      <div class="row"><label>轿厢规格</label>
+        <select id="capacity">
+          <option value="6">紧凑 · 6 人 / 480kg</option>
+          <option value="8" selected>标准 · 8 人 / 630kg</option>
+          <option value="10">高流量 · 10 人 / 800kg</option>
+          <option value="13">宽敞 · 13 人 / 1000kg</option>
+          <option value="16">大型 · 16 人 / 1250kg</option>
+        </select>
       </div>
       <div class="row"><label for="seed">随机种子</label><input class="inputSmall" id="seed" type="number" min="1" max="999999" value="2026"></div>
     </div>
@@ -213,7 +225,7 @@
 
     <div class="card legend">
       <h2>图例</h2>
-      <span class="dot" style="background:#ffd166"></span>候梯乘客（旁边的 → 楼层是目标；颜色表示已分配电梯）<br>
+      <span class="dot" style="background:#ffd166"></span>候梯乘客（旁边的 → 楼层是目标；不锁定某一台电梯）<br>
       <span class="dot" style="background:#7ce3b1"></span>电梯内乘客（轿厢上方显示人数/容量和目标楼层）<br>
       <span class="dot" style="background:#4da3ff"></span>楼层需求热度（左侧蓝条）<br>
       电梯边框发光 = 正在执行空闲驻停移动
@@ -367,8 +379,8 @@ function reassign(){
   }
   for(const [key, ps] of groups){
     const [f] = key.split('|').map(Number);
-    const unassigned = ps.filter(p=>p.assigned<0);
-    if(!unassigned.length) continue;
+    // 这是派梯计划，而不是对乘客的排他锁定。乘客可由任何合适轿厢接走。
+    const unassigned = ps;
     let best=null, bestT=1e9;
     for(const e of S.elevators){
       let t = etaTo(e, f);
@@ -378,7 +390,6 @@ function reassign(){
     }
     if(best){
       best.targets.add(f);
-      for(const p of unassigned) p.assigned = best.id;
     }
   }
 }
@@ -459,7 +470,8 @@ function arrive(e, floor){
     e.riders = e.riders.filter(p=>p.d!==floor);
     acted = true;
   }
-  const candidates = S.passengers.filter(p=>p.state==='wait' && p.o===floor && p.assigned===e.id);
+  // 现实中的大厅呼叫是共享的：只要该车到站、方向一致且未满载，候梯者均可登梯。
+  const candidates = S.passengers.filter(p=>p.state==='wait' && p.o===floor);
   // 中间楼层一次停靠只服务一个行进方向；两端楼层在此处自然换向。
   const serviceDir = serviceDirectionAt(e, floor, candidates);
   const boarding = candidates.filter(p=>Math.sign(p.d-floor)===serviceDir);
@@ -474,11 +486,6 @@ function arrive(e, floor){
       e.targets.add(p.d);
       acted = true;
     }
-    const left = S.passengers.filter(p=>p.state==='wait' && p.o===floor && p.assigned===e.id);
-    for(const p of left) p.assigned = -1;
-  } else {
-    // 该车本次运行方向无法接走的乘客必须释放，避免呼梯被错误占用。
-    for(const p of candidates) p.assigned = -1;
   }
   e.targets.delete(floor);
   if(acted){ e.state='door'; e.doorT=P.doorTime; S.totalStops++; }
@@ -528,7 +535,9 @@ function loop(ts){
 
 /* ================= 绘制 ================= */
 function floorY(f){ return H - P.lobbyPad - (f-1)*P.floorH; }
-function elevX(i){ return 130 + i*(P.shaftW+14); }
+function carWidth(){ return ({6:48,8:54,10:60,13:68,16:76})[P.capacity] || 54; }
+function carHeight(){ return ({6:29,8:32,10:35,13:39,16:43})[P.capacity] || 32; }
+function elevX(i){ return 130 + i*(carWidth()+16); }
 
 function draw(){
   ctx.clearRect(0,0,W,H);
@@ -550,29 +559,30 @@ function draw(){
   }
 
   S.elevators.forEach((e,i)=>{
-    const x = elevX(i), col = ELEV_COLORS[i];
-    const topY = floorY(F)-18, botY = floorY(1)+16;
+    const x = elevX(i), col = ELEV_COLORS[i], cw = carWidth(), ch = carHeight();
+    const topY = floorY(F)-ch/2-2, botY = floorY(1)+ch/2+2;
     ctx.strokeStyle = '#2c3855';
-    ctx.strokeRect(x-2, topY, P.shaftW+4, botY-topY);
-    const ey = floorY(e.y) - 16;
+    ctx.strokeRect(x-2, topY, cw+4, botY-topY);
+    const ey = floorY(e.y) - ch/2;
     ctx.fillStyle = '#1c2742';
     ctx.strokeStyle = col;
     ctx.lineWidth = e.parking ? 3 : 1.5;
     if(e.parking){ ctx.shadowColor = col; ctx.shadowBlur = 12; }
-    ctx.fillRect(x, ey, P.shaftW, 32);
-    ctx.strokeRect(x, ey, P.shaftW, 32);
+    ctx.fillRect(x, ey, cw, ch);
+    ctx.strokeRect(x, ey, cw, ch);
     ctx.shadowBlur = 0; ctx.lineWidth = 1;
     if(e.state==='door'){
       ctx.fillStyle = col;
-      ctx.fillRect(x+4, ey+4, P.shaftW-8, 3);
+      ctx.fillRect(x+4, ey+4, cw-8, 3);
     }
     ctx.fillStyle = col;
-    if(e.dir>0) ctx.fillText('▲', x+P.shaftW+4, ey+12);
-    else if(e.dir<0) ctx.fillText('▼', x+P.shaftW+4, ey+12);
+    if(e.dir>0) ctx.fillText('▲', x+cw+4, ey+12);
+    else if(e.dir<0) ctx.fillText('▼', x+cw+4, ey+12);
     e.riders.forEach((p,k)=>{
       ctx.fillStyle = '#7ce3b1';
       ctx.beginPath();
-      ctx.arc(x+8+(k%4)*12, ey+13+Math.floor(k/4)*11, 3.4, 0, 7);
+      const cols = P.capacity <= 8 ? 4 : 5;
+      ctx.arc(x+8+(k%cols)*11, ey+13+Math.floor(k/cols)*10, 3.2, 0, 7);
       ctx.fill();
     });
     if(e.riders.length){
@@ -586,7 +596,7 @@ function draw(){
     ctx.fillText('E'+(i+1), x+18, botY+14);
     for(const tf of e.targets){
       ctx.fillStyle = col+'55';
-      ctx.fillRect(x, floorY(tf)-14, P.shaftW, 3);
+      ctx.fillRect(x, floorY(tf)-14, cw, 3);
     }
   });
 
@@ -595,13 +605,13 @@ function draw(){
     if(p.state!=='wait') continue;
     (byFloor[p.o] = byFloor[p.o]||[]).push(p);
   }
-  const startX = 130 + P.nElev*(P.shaftW+14) + 16;
+  const startX = 130 + P.nElev*(carWidth()+16) + 16;
   for(const f in byFloor){
     const ps = byFloor[f], y = floorY(+f);
     ps.forEach((p,k)=>{
       const px = startX + (k%8)*40;
       const py = y-8-Math.floor(k/8)*14;
-      ctx.fillStyle = p.assigned>=0 ? ELEV_COLORS[p.assigned] : '#666f85';
+      ctx.fillStyle = '#ffd166';
       ctx.beginPath();
       ctx.arc(px, py, 3.6, 0, 7);
       ctx.fill();
@@ -756,9 +766,8 @@ document.getElementById('rate').addEventListener('input', e=>{
 document.getElementById('rate').addEventListener('change', ()=>{ reset(); toast('已用新的到达率重置'); });
 document.getElementById('capacity').addEventListener('input', e=>{
   P.capacity = +e.target.value;
-  document.getElementById('capacityVal').textContent = P.capacity+' 人';
 });
-document.getElementById('capacity').addEventListener('change', ()=>{ reset(); toast('已用新的轿厢容量重置'); });
+document.getElementById('capacity').addEventListener('change', ()=>{ reset(); toast('已切换轿厢规格并重置'); });
 document.getElementById('seed').addEventListener('change', e=>{
   P.seed = Math.max(1, Math.min(999999, +e.target.value || 2026));
   e.target.value = P.seed;
