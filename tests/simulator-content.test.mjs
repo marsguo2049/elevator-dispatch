@@ -5,8 +5,9 @@ import { readFile } from "node:fs/promises";
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 
 test("simulator leads with a concise City2049 purpose", () => {
-  assert.match(html, /CITY2049 · VERTICAL MOBILITY/);
-  assert.match(html, /实时观察多台电梯如何响应楼层呼叫/);
+  assert.match(html, /Vertical Flow · Elevator Group Control · City2049/);
+  assert.match(html, /CITY2049 · URBAN SYSTEMS/);
+  assert.match(html, /Elevator Group Control · 群控电梯实时仿真/);
   assert.doesNotMatch(html, /ETA 最优/);
 });
 
