@@ -26,7 +26,7 @@ function loadSimulator(){
   };
   const exposed = script.replace(
     /reset\(\);\s*syncLevelUI\(\);\s*syncExperimentDuration\(\);\s*applyLanguage\(\);\s*requestAnimationFrame\(loop\);/,
-    "globalThis.__sim = { P, reset, stepElevator, getState: () => S };",
+    "globalThis.__sim = { P, reset, reassign, stepElevator, advanceSimulation, getState: () => S };",
   );
   vm.runInNewContext(exposed, context);
   return context.__sim;
@@ -132,4 +132,43 @@ test("a loaded car does not reverse for an opposite-direction intermediate call"
   assert.equal(elevator.dir, 1);
   assert.equal(elevator.riders.length, 1);
   assert.equal(elevator.targets.has(10), true);
+});
+
+test("reassignment removes a resolved shared call instead of leaving a ghost stop", () => {
+  const sim = loadSimulator();
+  sim.P.floors = 14; sim.P.nElev = 2; sim.P.park = false; sim.reset();
+  const state = sim.getState();
+  state.elevators[0].targets.add(7);
+
+  sim.reassign();
+
+  assert.equal(state.elevators[0].targets.has(7), false);
+});
+
+test("reassignment always preserves destinations for passengers already aboard", () => {
+  const sim = loadSimulator();
+  sim.P.floors = 14; sim.P.nElev = 2; sim.P.park = false; sim.reset();
+  const state = sim.getState();
+  state.elevators[0].riders.push({ ...waitingPassenger(3, 11), state: "ride", elev: 0 });
+
+  sim.reassign();
+
+  assert.equal(state.elevators[0].targets.has(11), true);
+});
+
+test("the same fixed number of simulation steps is independent of playback speed", () => {
+  const run = (speed) => {
+    const sim = loadSimulator();
+    sim.P.floors = 14; sim.P.nElev = 3; sim.P.ratePerMin = 8; sim.P.speed = speed; sim.P.park = true; sim.reset();
+    for(let i=0;i<1200;i++) sim.advanceSimulation(0.1);
+    const state = sim.getState();
+    return JSON.stringify({
+      time: state.t,
+      passengers: state.passengers.map(p => [p.o,p.d,p.state,p.elev]),
+      elevators: state.elevators.map(e => [e.y,e.dir,e.state,e.riders.length,[...e.targets]]),
+      waits: [...state.servedWaits],
+    });
+  };
+
+  assert.deepEqual(run(1), run(16));
 });

@@ -1,105 +1,87 @@
-# 电梯调度实验室
+# Elevator
 
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE.md)
 
-一个面向运筹学入门、教学演示与个人作品展示的浏览器仿真。从一部普通电梯出发，再观察多部电梯如何共同服务一栋办公楼。
+[在线体验 / Live demo](https://marsguo2049.github.io/elevator-dispatch/)
 
-它是 City2049 的第一个可运行模块：**Vertical Mobility / 垂直交通**。本仓库只处理现实中的基础电梯运行与群控；机器人配送、Sky Lobby 与太空电梯属于明确标注的后续设想，并未在当前代码中实现。
+## 中文
 
-> 项目定位：**规则式调度启发式 + 随机离散时间仿真**。它不是数学规划求解器，不计算或证明全局最优解，也不应被视为真实电梯控制系统。
+一个面向普通用户、运筹学入门和教学展示的多电梯调度仿真。乘客会在不同楼层出现，调度规则持续决定哪台电梯响应呼叫；你可以观察等待、拥堵、停靠与运行距离怎样随设置和规则变化。
 
-## 两个学习层级
+项目属于 City2049 的 Vertical Mobility 模块，但当前实现只模拟基础办公楼电梯。它是**规则式调度启发式 + 随机离散时间仿真**，不是数学规划求解器，不证明全局最优，也不能用于真实楼宇控制或安全认证。
 
-| 层级 | 场景 | 当前可观察的决策 |
+### 怎样使用
+
+1. 选择 1–6 台电梯、8/16/20 层、客流模式、轿厢规格和乘客到达率。
+2. 在实时画布中观察电梯、候梯乘客、轿厢乘客和等待指标。
+3. 先运行一种调度规则，再切换另一种规则重新运行。两次实验从相同随机种子和相同乘客序列开始，结果并排显示。
+
+界面提供完整中英文切换，并针对手机、平板、笔记本和宽屏布局调整。窄屏会把同层乘客合并显示为上行/下行人数和最长已等待时间，避免 6 台电梯时画布横向溢出。
+
+### 两种调度规则
+
+| 规则 | 主要倾向 | 代价 |
 | --- | --- | --- |
-| Level 1 · 单部普通电梯 | 一部电梯服务一栋楼 | 按当前方向扫描楼层、容量限制、开关门与停靠如何影响等待 |
-| Level 2 · 多电梯群控 | 2 或 4 部电梯共享请求 | 一个楼层方向请求派给哪台车；空闲车是否驻停在需求更可能出现的位置 |
+| 响应优先 | 更积极响应新呼叫，优先缩短乘客等待 | 可能增加停靠和空载移动 |
+| 少停靠优先 | 奖励顺路合乘，减少新增停靠和空载移动 | 部分乘客可能等待更久 |
 
-Level 1 的运行核心是“最近请求 + 方向扫描”的简化控制；Level 2 才加入协同 ETA 派梯、最近可达车基准和需求感知驻停。它们都是规则式控制/启发式策略，不是全局最优的数学规划。
+“少停靠优先”只使用停靠与运行距离作为效率代理，**不是实际能耗模型**。
 
-## 从生活场景到决策问题
+### 仿真方法
 
-办公楼内的乘客从不同楼层发出上行或下行请求。默认的“日常客流”设定中，80% 的出行发生在大厅与办公楼层之间（上班、下班、外出与返回），20% 为办公楼层之间的往来。多台电梯共享这些请求时，需要连续回答两个问题：
+- 乘客到达间隔服从指数分布，对应泊松到达过程；
+- 日常客流中 80% 为大厅与办公楼层之间的出行；另含早高峰、晚高峰和午间双向模式；
+- 同一楼层、同一方向的乘客组成共享呼叫组；
+- 派梯成本考虑预计路线距离、计划停靠、当前载客、反向行驶、满载惩罚和等待时长；
+- 轿厢按 LOOK 式方向扫描服务任务，容量是硬约束；
+- 空闲电梯使用近期呼叫热度和客流先验选择驻停楼层；
+- 核心仿真采用 0.1 秒固定步长，因此播放倍速只改变观看速度，不改变实验积分步长。
 
-1. 当前楼层方向请求应分配给哪台电梯？
-2. 没有任务的电梯应停在原地、大厅，还是近期需求较高的楼层？
+### 指标口径
 
-本项目用平均等待、P95 等待、最长等待、平均全程时间、停靠次数、运行距离与完成服务人数评价规则表现。简化约束包括：
+| 指标 | 口径 |
+| --- | --- |
+| 候梯人数 | 当前仍未上梯的人数 |
+| 已上梯者平均等待 | 已经上梯的乘客从到达到上梯的平均时间 |
+| 最长已观察等待 | 已上梯等待时间与当前候梯已等待时间中的最大值 |
+| P95 等待 | 95% 的已上梯乘客等待不超过该值 |
+| 平均全程时间 | 已完成乘客从到达到抵达目的层的平均时间 |
+| 结束时仍在候梯 | 实验时限结束时尚未上梯的人数 |
+| 运行距离 / 停靠次数 | 所有电梯累计移动楼层数 / 实际上下客停靠数 |
 
-- 轿厢采用常见离散规格：6 人/480kg、8 人/630kg、10 人/800kg、13 人/1000kg、16 人/1250kg；满载轿厢不会继续上客；
-- 电梯速度、开关门时间固定；
-- 一次停靠只接同一方向乘客；到站后，方向一致且未满载的候梯者可搭乘任一到站轿厢，不被预先锁定给某一台车；
-- 乘客到达服从指数间隔（泊松过程）；
-- 不建模加速度、门区安全、故障、消防模式和目的层控制等工程细节。
+等待均值和 P95 只统计实验时限内已经上梯的乘客，因此比较时必须同时查看“结束时仍在候梯”，避免未完成队列造成选择偏差。
 
-## 实际采用的方法
+### 运行与检查
 
-### 协同 ETA 派梯启发式
-
-候梯乘客按“起始楼层 + 方向”组成呼梯组。每隔固定仿真时间，未分配的呼梯组会计算每台电梯的规则成本：
-
-```text
-规则成本 ≈ 行驶时间 + 已有停靠代价 + 反向惩罚 + 满载惩罚
-```
-
-“响应优先”更重视到达呼梯楼层的预计时间；“合乘优先”对新增停靠施加更大惩罚，并奖励顺路或已有同层任务。等待时间会形成温和的优先级修正，降低长期饥饿风险。这些都是可解释的启发式权重，并非对某个数学目标函数的精确优化。
-
-### 需求感知驻停
-
-空闲超过阈值后，协同策略根据指数衰减的历史呼梯热度和客流模式先验选择驻停楼层，同时避免多台空闲车聚集。这是在线经验规则，不是需求预测模型。
-
-### 基准策略
-
-基准使用“最近可达车 + 方向惩罚”派梯；空闲后回到大厅。它有意保持简单，便于课堂讨论策略差异。
-
-## 公平对比如何工作
-
-在 Level 2 中，点击“运行同样本 A/B 对比”后，系统用相同的随机种子和完全相同的乘客到达/起终点样本，分别独立运行两种策略 15 分钟，再比较：
-
-- 平均等待时间；
-- 平均全程时间；
-- 每位已上梯乘客对应的停靠次数；
-- 仿真窗口内完成服务人数。
-
-单次结果只适用于当前参数和随机样本。建议更换多个种子观察均值与波动，不应根据一次运行宣称某策略普遍优越。
-
-## 运行项目
-
-项目没有第三方运行依赖。可直接双击 `index.html`，也可以启动任意静态文件服务器：
+项目没有运行时依赖，可直接打开 `index.html`。也可以使用内置的零依赖预览服务器；测试需要 Node.js 18 或更高版本：
 
 ```bash
-npx serve .
-```
-
-源码检查需要 Node.js 18 或更高版本：
-
-```bash
+npm run dev
 npm test
 ```
 
-`index.html` 是完整的交互仿真，可直接部署到 GitHub Pages、Netlify 或其他静态托管服务。
+### 已知边界
 
-## 适合怎样使用
+- 停靠任务使用集合而不是完整的带时刻路线序列，ETA 是规则近似；
+- 未建模加速度曲线、门区安全、故障、消防模式、目的层控制和真实能耗；
+- 固定时限实验会留下未完成队列，页面已单独报告该队列，但不会推断这些乘客最终等待时间；
+- 单个随机样本不能证明某种规则普遍更好，严谨实验应扩展为多随机种子与置信区间。
 
-- 运筹学或服务系统课程中的启发式与基准实验；
-- 讨论“局部 ETA 更短”与“系统停靠更少”的权衡；
-- 演示随机种子、同样本对照和指标口径；
-- 作为 Everyday OR / 生活里的运筹学系列作品。
+## English
 
-## 已知边界
+Elevator is a browser-based multi-car dispatch simulation for general audiences, introductory operations research, and teaching. Passengers arrive on different floors while a rule continuously decides which car should respond. The live view makes waiting, congestion, stops, and travel visible.
 
-- `Set` 形式的停靠表不能表达完整的预计到达时刻与精细插入顺序；
-- ETA 只是距离与停靠惩罚的近似，不是对完整路线的逐段仿真预测；
-- 驻停热度来自当前运行中的衰减计数和场景先验，不含训练或外部数据；
-- 未加入群控系统常见的目的层分配、分区、能耗曲线、维修和安全逻辑；
-- 仿真采用固定步长近似事件发生时刻，结果用于比较和教学，不用于工程认证。
+The project is a **rule-based dispatch heuristic with a stochastic discrete-time simulation**. It is not a mathematical optimizer, does not prove global optimality, and is not an engineering controller for real buildings.
 
-## 后续扩展方向
+Users can configure 1–6 cars, 8/16/20 floors, traffic patterns, car capacity, and arrival rate. Two rules are available:
 
-下一步优先把当前的停靠集合升级为显式路线序列，并以多随机种子批量实验展示均值与置信区间；之后可比较 LOOK、最近车、分区和简单滚动时域插入策略。更远期，City2049 可在独立模块中探索机器人—电梯协同配送、水平—垂直换乘与轨道物流；它们不应被误写成当前模拟器已具备的能力。
+- **Response first** answers new calls more aggressively to reduce waiting.
+- **Fewer stops** rewards on-route sharing and reduces new stops and empty travel. It is not a physical energy model.
 
-## 许可证与商业使用
+Strategy experiments use the same random seed and passenger sequence. Wait statistics cover passengers who boarded within the experiment window, so results must be read together with **Still waiting at end**. The simulator uses a fixed 0.1-second integration step, making playback speed a viewing control only.
 
-本项目采用 [PolyForm Noncommercial License 1.0.0](LICENSE.md)：允许个人学习、教学、研究、实验、非营利使用、修改和再分发，但不允许商业用途。
+The interface is fully bilingual and responsive across phones, tablets, laptops, and wide screens. On narrow screens, floor calls are aggregated into upward/downward counts and the longest observed wait so all six cars remain visible.
 
-这是一份 **source-available（源码公开）** 许可证，不属于 OSI 定义的开源许可证。任何商业使用、商业产品集成或预期商业应用，均需事先取得版权所有者的单独书面许可。
+## License
+
+This project uses the [PolyForm Noncommercial License 1.0.0](LICENSE.md). Noncommercial learning, teaching, research, experimentation, modification, and redistribution are permitted. Commercial use requires separate written permission from the copyright holder.
