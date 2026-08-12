@@ -29,6 +29,13 @@ test("opposite-direction calls are released after an incompatible stop", () => {
   assert.match(html, /for\(const p of candidates\) p\.assigned = -1/);
 });
 
+test("daily demand emphasizes lobby-to-floor travel and displays destinations", () => {
+  assert.match(html, /日常客流（80% 大厅往返）/);
+  assert.match(html, /if\(r\(\) < 0\.8\)/);
+  assert.match(html, /fillText\('→'\+p\.d\+'F'/);
+  assert.match(html, /轿厢上方列出目标楼层/);
+});
+
 test("inline simulator script parses", () => {
   const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
   assert.equal(scripts.length, 1);
