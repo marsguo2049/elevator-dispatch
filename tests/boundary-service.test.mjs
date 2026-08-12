@@ -98,3 +98,38 @@ test("a car can board an eligible passenger even when a different car planned th
   assert.equal(passenger.state, "ride");
   assert.equal(passenger.elev, 1);
 });
+
+test("an empty car reverses at an intermediate floor to serve the waiting direction", () => {
+  const sim = loadSimulator();
+  sim.P.floors = 14; sim.P.nElev = 1; sim.P.park = false; sim.reset();
+  const state = sim.getState();
+  const elevator = state.elevators[0];
+  elevator.y = 7; elevator.dir = 1; elevator.targets.add(7);
+  const passenger = waitingPassenger(7, 1);
+  state.passengers.push(passenger);
+
+  sim.stepElevator(elevator, 0.1);
+
+  assert.equal(passenger.state, "ride");
+  assert.equal(elevator.dir, -1);
+  assert.equal(elevator.riders.length, 1);
+});
+
+test("a loaded car does not reverse for an opposite-direction intermediate call", () => {
+  const sim = loadSimulator();
+  sim.P.floors = 14; sim.P.nElev = 1; sim.P.park = false; sim.reset();
+  const state = sim.getState();
+  const elevator = state.elevators[0];
+  elevator.y = 7; elevator.dir = 1;
+  elevator.targets.add(7); elevator.targets.add(10);
+  elevator.riders.push({ ...waitingPassenger(3, 10), state: "ride", elev: 0 });
+  const passenger = waitingPassenger(7, 1);
+  state.passengers.push(passenger);
+
+  sim.stepElevator(elevator, 0.1);
+
+  assert.equal(passenger.state, "wait");
+  assert.equal(elevator.dir, 1);
+  assert.equal(elevator.riders.length, 1);
+  assert.equal(elevator.targets.has(10), true);
+});
