@@ -17,6 +17,9 @@
   .eyebrow { color:#75c4ff; font-size:10px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
   h1 { margin-top:6px; font-size:25px; line-height:1.1; letter-spacing:-.045em; }
   .subtitle { margin-top:8px; color:#9badc7; font-size:12px; line-height:1.5; }
+  .viewTabs { display:flex; gap:5px; padding:4px; border:1px solid #25405f; border-radius:10px; background:#0b1628; }
+  .viewTab { flex:1; border:0; border-radius:7px; padding:7px; background:transparent; color:#8fa5c3; font-size:11px; cursor:pointer; }
+  .viewTab.on { background:#294869; color:#edf7ff; font-weight:800; }
   .card { border:1px solid #203756; border-radius:16px; padding:15px; background:linear-gradient(145deg,#14233b,#101b2e); }
   .card h2 { margin-bottom:13px; color:#a9c1df; font-size:10px; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
   .row { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:30px; font-size:12px; }
@@ -54,6 +57,13 @@
   .resultGrid span:nth-child(3n+2), .resultGrid span:nth-child(3n+3) { text-align:right; font-variant-numeric:tabular-nums; }
   .resultHead { color:#8ea5c3; background:#172842; font-size:9px; font-weight:800; }
   .response { color:#8ed5ff; } .energy { color:#88e0af; }
+  .minutesInput { width:68px; padding:6px; border:1px solid #385778; border-radius:8px; color:#edf5ff; background:#1c304d; text-align:center; }
+  .exportBtn { margin-top:9px; width:100%; padding:8px; }
+  .algorithm { display:grid; gap:8px; }
+  .algoStep { padding:10px; border-left:2px solid #6cbdf8; border-radius:0 9px 9px 0; background:#0d192b; }
+  .algoStep b { display:block; color:#d9eaff; font-size:11px; }
+  .algoStep span { display:block; margin-top:4px; color:#8ea5c3; font-size:10px; line-height:1.5; }
+  .modelNote { margin-top:11px; color:#7f96b4; font-size:10px; line-height:1.5; }
   #toast { position:absolute; left:50%; bottom:24px; transform:translateX(-50%); padding:8px 14px; border:1px solid #3b5879; border-radius:999px; background:rgba(15,28,48,.94); font-size:12px; opacity:0; transition:opacity .25s; pointer-events:none; }
   @media (max-width:760px) { body { overflow:auto; } #app { min-height:100dvh; flex-direction:column; } #canvasWrap { height:49svh; min-height:320px; flex:none; } #panel { width:100%; overflow:visible; padding:16px; border-left:0; border-top:1px solid #213655; } h1 { font-size:23px; } .card { padding:14px; } }
 </style>
@@ -68,7 +78,12 @@
       <p class="subtitle">实时观察多台电梯如何响应楼层呼叫，并平衡等待与运行效率。</p>
     </header>
 
-    <div class="card dash">
+    <div class="viewTabs" id="viewTabs">
+      <button class="viewTab on" data-view="dashboard">运行仪表</button>
+      <button class="viewTab" data-view="model">模型与算法</button>
+    </div>
+
+    <div id="dashboardView" class="card dash">
       <h2>运行仪表盘</h2>
       <div class="gauges">
         <div class="gauge" id="gWaiting" style="--accent:#ffd166"><div><strong id="stWaiting">0</strong><span>候梯人数</span></div></div>
@@ -80,6 +95,17 @@
         <div class="mini"><span>最长等待</span><strong id="stMaxWait">–</strong></div>
         <div class="mini"><span>仿真时间</span><strong id="stClock">00:00</strong></div>
       </div>
+    </div>
+
+    <div id="modelView" class="card" hidden>
+      <h2>模型与算法</h2>
+      <div class="algorithm">
+        <div class="algoStep"><b>1 · 客流生成</b><span>按当前模式产生起点与目的地；日常场景中 80% 是大厅与办公楼层之间的出行。</span></div>
+        <div class="algoStep"><b>2 · 呼叫分组与派梯</b><span>按“楼层 + 方向”合并候梯请求，估计每台车到达该楼层的时间，再选出更合适的车。</span></div>
+        <div class="algoStep"><b>3 · 到站服务</b><span>方向一致、未满载的乘客可上任一到站电梯；空车在中间楼层可按候梯方向换向。</span></div>
+        <div class="algoStep"><b>4 · 目标权衡</b><span>响应优先更快接人；节能优先减少新增停靠和空载移动。两者均为规则式启发式，不是全局最优求解。</span></div>
+      </div>
+      <p class="modelNote">切换到此处不会暂停或重置左侧正在运行的仿真。</p>
     </div>
 
     <div class="card">
@@ -134,9 +160,19 @@
     </div>
 
     <div class="card experiment">
-      <h2>同样本策略对比</h2>
-      <p>以当前楼层、台数、客流和轿厢规格，分别运行固定 15 分钟。两种目标使用完全相同的客流样本。</p>
-      <button class="btn primary" id="btnCompare">运行 15 分钟对比</button>
+      <h2 id="compareTitle">同样本策略对比 · 10 分钟</h2>
+      <p>以当前楼层、台数、客流和轿厢规格，分别运行相同的固定时长。两种目标使用完全相同的客流样本。</p>
+      <div class="row" style="margin-top:11px;"><label for="compareDuration">实验时长</label>
+        <select id="compareDuration">
+          <option value="5">5 分钟 · 快速</option>
+          <option value="10" selected>10 分钟 · 推荐</option>
+          <option value="15">15 分钟</option>
+          <option value="30">30 分钟</option>
+          <option value="custom">自定义</option>
+        </select>
+      </div>
+      <div class="row" id="customDurationRow" hidden><label for="customDuration">自定义时长</label><span><input class="minutesInput" id="customDuration" type="number" min="1" max="120" value="10"> 分钟</span></div>
+      <button class="btn primary" id="btnCompare">运行 10 分钟对比</button>
       <div class="resultGrid" id="compareResult" hidden>
         <span class="resultHead">指标</span><span class="resultHead response">响应优先</span><span class="resultHead energy">节能优先</span>
         <span>平均等待</span><span id="cmpWaitResponse">–</span><span id="cmpWaitEnergy">–</span>
@@ -145,6 +181,7 @@
         <span>运行距离</span><span id="cmpDistanceResponse">–</span><span id="cmpDistanceEnergy">–</span>
         <span>停靠次数</span><span id="cmpStopsResponse">–</span><span id="cmpStopsEnergy">–</span>
       </div>
+      <button class="btn exportBtn" id="btnExport" disabled>↓ 导出 Markdown 报告</button>
     </div>
 
     <div class="card">
@@ -160,7 +197,7 @@ const P = {
   floors: 14, nElev: 2, pattern: 'random', level: 2,
   ratePerMin: 6, speed: 4, seed: 2026,
   coop: true, park: true, objective: 'wait',
-  floorH: 0, shaftW: 54, lobbyPad: 46, topPad: 68,
+  floorH: 0, shaftW: 54, lobbyPad: 46, topPad: 48,
   elevSpeed: 0.9,      // 层/秒
   doorTime: 1.4,       // 秒
   reassignEvery: 0.6,  // 秒
@@ -555,9 +592,9 @@ function draw(){
   }
 
   ctx.fillStyle = '#9badc7';
-  ctx.font = '12px sans-serif';
+  ctx.font = '11px sans-serif';
   const goalTxt = P.objective==='wait' ? '快速响应' : '节能少跑';
-  ctx.fillText(P.nElev+' 台电梯 · '+F+' 层 · 当前目标：'+goalTxt, 30, 18);
+  ctx.fillText(P.nElev+' 台 · '+F+' 层 · '+goalTxt, 30, 16);
 }
 
 /* ================= 统计 ================= */
@@ -582,12 +619,12 @@ function updateStats(){
 }
 
 /* ================= 固定时长策略实验 ================= */
-function runFixedScenario(objective){
+function runFixedScenario(objective, minutes){
   const liveState = S;
   const liveObjective = P.objective;
   P.objective = objective;
   reset(); // 每次从相同随机种子开始，确保两种目标面对同一批客流。
-  const horizon = 15*60, dt = 0.2;
+  const horizon = minutes*60, dt = 0.2;
   for(let tick=0; tick<horizon/dt; tick++){
     S.t += dt;
     const decay = Math.pow(0.5, dt/60);
@@ -621,16 +658,63 @@ function showComparison(response, energy){
   document.getElementById('compareResult').hidden = false;
 }
 
+let latestExperiment = null;
+function getExperimentMinutes(){
+  const selected = document.getElementById('compareDuration').value;
+  if(selected !== 'custom') return +selected;
+  return Math.max(1, Math.min(120, +document.getElementById('customDuration').value || 10));
+}
+function syncExperimentDuration(){
+  const custom = document.getElementById('compareDuration').value==='custom';
+  document.getElementById('customDurationRow').hidden = !custom;
+  const minutes = getExperimentMinutes();
+  document.getElementById('compareTitle').textContent = '同样本策略对比 · '+minutes+' 分钟';
+  document.getElementById('btnCompare').textContent = '运行 '+minutes+' 分钟对比';
+}
 function runComparison(){
   const btn = document.getElementById('btnCompare');
+  const minutes = getExperimentMinutes();
   btn.disabled = true; btn.textContent = '正在运行同样本实验…';
   requestAnimationFrame(()=>{
-    const response = runFixedScenario('wait');
-    const energy = runFixedScenario('eff');
+    const response = runFixedScenario('wait', minutes);
+    const energy = runFixedScenario('eff', minutes);
     showComparison(response, energy);
-    btn.disabled = false; btn.textContent = '重新运行 15 分钟对比';
+    latestExperiment = { minutes, response, energy, config:{ floors:P.floors, elevators:P.nElev, pattern:P.pattern, rate:P.ratePerMin, capacity:P.capacity } };
+    document.getElementById('btnExport').disabled = false;
+    btn.disabled = false; btn.textContent = '重新运行 '+minutes+' 分钟对比';
     toast('对比完成：两种目标使用相同客流样本');
   });
+}
+
+function exportMarkdown(){
+  if(!latestExperiment) return;
+  const x = latestExperiment;
+  const pattern = {random:'日常客流（80% 大厅往返）', morning:'早高峰（上行）', evening:'晚高峰（下行）', lunch:'午间双向'}[x.config.pattern];
+  const line = (label,key,unit='',digits=1) => '| '+label+' | '+fmtResult(x.response[key],digits)+unit+' | '+fmtResult(x.energy[key],digits)+unit+' |';
+  const markdown = [
+    '# City2049 电梯调度实验结果', '',
+    '## 实验设置',
+    '- 实验时长：'+x.minutes+' 分钟',
+    '- 电梯数量：'+x.config.elevators+' 台',
+    '- 楼层数：'+x.config.floors+' 层',
+    '- 客流模式：'+pattern,
+    '- 到达率：'+x.config.rate+' 人/分',
+    '- 轿厢规格：'+x.config.capacity+' 人',
+    '- 样本控制：两种策略从相同随机种子和相同客流序列开始。', '',
+    '## 结果',
+    '| 指标 | 响应优先 | 节能优先 |',
+    '| --- | ---: | ---: |',
+    line('平均等待','wait',' s'), line('P95 等待','p95',' s'), line('完成行程','done','',0),
+    line('运行距离','distance',' 层'), line('停靠次数','stops','',0), '',
+    '## 说明',
+    '响应优先更积极响应新呼叫；节能优先倾向合并顺路请求，以减少停靠和空载移动。结果仅适用于本次简化仿真与当前参数。'
+  ].join('\n');
+  const blob = new Blob([markdown], {type:'text/markdown;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = 'city2049-elevator-'+x.minutes+'min.md';
+  link.click(); URL.revokeObjectURL(url);
+  toast('已导出 Markdown 实验报告');
 }
 
 /* ================= UI ================= */
@@ -642,7 +726,18 @@ const toast = (msg)=>{
 function syncLevelUI(){
   document.querySelectorAll('#elevSeg [data-n]').forEach(b=>b.classList.toggle('on', +b.dataset.n===P.nElev));
 }
-function invalidateComparison(){ document.getElementById('compareResult').hidden = true; }
+function invalidateComparison(){
+  latestExperiment = null;
+  document.getElementById('compareResult').hidden = true;
+  document.getElementById('btnExport').disabled = true;
+}
+document.getElementById('viewTabs').addEventListener('click', e=>{
+  if(!e.target.dataset.view) return;
+  const model = e.target.dataset.view==='model';
+  document.getElementById('dashboardView').hidden = model;
+  document.getElementById('modelView').hidden = !model;
+  [...e.currentTarget.children].forEach(b=>b.classList.toggle('on', b===e.target));
+});
 document.getElementById('elevSeg').addEventListener('click', e=>{
   if(e.target.dataset.n){ P.nElev = +e.target.dataset.n;
     reset(); invalidateComparison(); syncLevelUI(); toast('已切换为 '+P.nElev+' 台电梯'); }
@@ -673,6 +768,8 @@ document.getElementById('capacity').addEventListener('input', e=>{
   P.capacity = +e.target.value;
 });
 document.getElementById('capacity').addEventListener('change', ()=>{ reset(); invalidateComparison(); toast('已切换轿厢规格并重置'); });
+document.getElementById('compareDuration').addEventListener('change', ()=>{ syncExperimentDuration(); invalidateComparison(); });
+document.getElementById('customDuration').addEventListener('input', ()=>{ syncExperimentDuration(); invalidateComparison(); });
 document.getElementById('speed').addEventListener('input', e=>{
   P.speed = +e.target.value;
   document.getElementById('speedVal').textContent = P.speed+'×';
@@ -683,9 +780,11 @@ document.getElementById('btnPause').addEventListener('click', e=>{
 });
 document.getElementById('btnReset').addEventListener('click', ()=>{ reset(); invalidateComparison(); toast('已重置'); });
 document.getElementById('btnCompare').addEventListener('click', runComparison);
+document.getElementById('btnExport').addEventListener('click', exportMarkdown);
 
 reset();
 syncLevelUI();
+syncExperimentDuration();
 requestAnimationFrame(loop);
 </script>
 </body>
