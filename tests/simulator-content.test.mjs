@@ -20,6 +20,15 @@ test("simulator keeps a focused set of live controls", () => {
   assert.doesNotMatch(html, /id="seed"/);
 });
 
+test("simulator explains and exposes response and energy dispatch goals", () => {
+  assert.match(html, /调度目标/);
+  assert.match(html, /响应优先/);
+  assert.match(html, /节能优先/);
+  assert.match(html, /尽量合并顺路请求，并减少停靠与空载移动/);
+  assert.match(html, /当前目标：/);
+  assert.doesNotMatch(html, /协同 ETA.*需求驻停/);
+});
+
 test("simulator presents core live metrics as a dashboard", () => {
   assert.match(html, /运行仪表盘/);
   assert.match(html, /id="gWaiting"/);
