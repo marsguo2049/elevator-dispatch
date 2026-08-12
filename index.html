@@ -124,7 +124,7 @@
       </div>
       <div class="row"><label>客流模式</label>
         <select id="pattern">
-          <option value="random">随机客流</option>
+          <option value="random">日常客流（80% 大厅往返）</option>
           <option value="morning">早高峰（上行）</option>
           <option value="evening">晚高峰（下行）</option>
           <option value="lunch">午间双向</option>
@@ -202,8 +202,8 @@
 
     <div class="card legend">
       <h2>图例</h2>
-      <span class="dot" style="background:#ffd166"></span>候梯乘客（颜色表示已分配电梯）<br>
-      <span class="dot" style="background:#7ce3b1"></span>电梯内乘客<br>
+      <span class="dot" style="background:#ffd166"></span>候梯乘客（旁边的 → 楼层是目标；颜色表示已分配电梯）<br>
+      <span class="dot" style="background:#7ce3b1"></span>电梯内乘客（轿厢上方列出目标楼层）<br>
       <span class="dot" style="background:#4da3ff"></span>楼层需求热度（左侧蓝条）<br>
       电梯边框发光 = 正在执行空闲驻停移动
     </div>
@@ -285,7 +285,15 @@ function genOD(){
     if(r()<0.5){ o=1; d=2+Math.floor(r()*(F-1)); }
     else { o=2+Math.floor(r()*(F-1)); d=1; }
   } else {
-    o=1+Math.floor(r()*F); do{ d=1+Math.floor(r()*F);}while(d===o);
+    // 日常办公楼：绝大多数出行发生在大厅与办公楼层之间；
+    // 少量才是楼层之间的横向拜访、会议或设施使用。
+    if(r() < 0.8){
+      if(r() < 0.5){ o=1; d=2+Math.floor(r()*(F-1)); }
+      else { o=2+Math.floor(r()*(F-1)); d=1; }
+    } else {
+      o=2+Math.floor(r()*(F-1));
+      do{ d=2+Math.floor(r()*(F-1)); }while(d===o);
+    }
   }
   return [o,d];
 }
@@ -548,6 +556,13 @@ function draw(){
       ctx.arc(x+8+(k%4)*12, ey+13+Math.floor(k/4)*11, 3.4, 0, 7);
       ctx.fill();
     });
+    if(e.riders.length){
+      ctx.fillStyle = '#a9ffd4';
+      ctx.font = '9px sans-serif';
+      const destinations = e.riders.map(p=>p.d+'F').join(' · ');
+      ctx.fillText('→ '+destinations, x, ey-5);
+      ctx.font = '11px sans-serif';
+    }
     ctx.fillStyle = '#9fb0d0';
     ctx.fillText('E'+(i+1), x+18, botY+14);
     for(const tf of e.targets){
@@ -565,19 +580,25 @@ function draw(){
   for(const f in byFloor){
     const ps = byFloor[f], y = floorY(+f);
     ps.forEach((p,k)=>{
+      const px = startX + (k%8)*40;
+      const py = y-8-Math.floor(k/8)*14;
       ctx.fillStyle = p.assigned>=0 ? ELEV_COLORS[p.assigned] : '#666f85';
       ctx.beginPath();
-      ctx.arc(startX + (k%8)*13, y-8-Math.floor(k/8)*12, 3.6, 0, 7);
+      ctx.arc(px, py, 3.6, 0, 7);
       ctx.fill();
+      ctx.fillStyle = '#c3cde2';
+      ctx.font = '9px sans-serif';
+      ctx.fillText('→'+p.d+'F', px+5, py+3);
+      ctx.font = '11px sans-serif';
     });
     const oldest = Math.max(...ps.map(p=>S.t-p.t0));
     ctx.fillStyle = '#8a94ad';
-    ctx.fillText(ps.length+'人 最长'+oldest.toFixed(0)+'s', startX + Math.min(ps.length,8)*13 + 6, y-4);
+    ctx.fillText(ps.length+'人 最长'+oldest.toFixed(0)+'s', startX + Math.min(ps.length,8)*40 + 6, y-4);
   }
 
   ctx.fillStyle = '#5f6b85';
   ctx.font = '12px sans-serif';
-  const modeTxt = {random:'随机客流',morning:'早高峰上行',evening:'晚高峰下行',lunch:'午间双向'}[P.pattern];
+  const modeTxt = {random:'日常 80% 大厅往返',morning:'早高峰上行',evening:'晚高峰下行',lunch:'午间双向'}[P.pattern];
   ctx.fillText(P.nElev+'台电梯 · '+F+'层 · '+modeTxt+' · '+(P.objective==='wait'?'响应优先':'合乘优先')+' · '+(P.coop?'协同 ETA':'最近可达车(对照)')+' · 需求驻停'+(P.park?'开':'关')+' · seed '+P.seed, 30, 18);
 }
 
