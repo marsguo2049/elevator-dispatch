@@ -5,90 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>电梯调度实验室 · City2049 Vertical Mobility</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  :root { color-scheme: dark; }
-  body {
-    font-family: Inter, ui-sans-serif, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: #070b16; color: #edf2ff; overflow: hidden;
-  }
-  button, input, select { font: inherit; }
-  #app { display: flex; height: 100dvh; }
-  #canvasWrap {
-    flex: 1; position: relative; overflow:hidden;
-    background: radial-gradient(circle at 32% 18%, #183866 0%, #0d1930 35%, #070d1b 78%);
-  }
-  #canvasWrap::before {
-    content:""; position:absolute; inset:0; pointer-events:none; opacity:.42;
-    background-image: linear-gradient(rgba(117,190,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(117,190,255,.035) 1px, transparent 1px);
-    background-size: 32px 32px;
-  }
-  canvas { display: block; }
-  #panel {
-    width: 410px; background: linear-gradient(180deg, #121c31 0%, #0c1323 100%); border-left: 1px solid #30466a;
-    padding: 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
-    scrollbar-color: #44618e transparent; box-shadow: -18px 0 45px #02061155;
-  }
-  h1 { font-size: 24px; line-height:1.15; font-weight: 760; letter-spacing:-.035em; }
-  h1 small { font-weight: 400; color: #96a3bd; font-size: 12px; display:block; margin-top:7px; line-height:1.6;}
-  .eyebrow { color:#79c3ff; text-transform:uppercase; letter-spacing:.15em; font-size:10px; font-weight:800; margin-bottom:8px; }
-  .card { background: linear-gradient(145deg, #1a2945 0%, #131f36 100%); border:1px solid #2c4267; border-radius: 14px; padding: 14px 15px; box-shadow: inset 0 1px 0 #ffffff08, 0 8px 20px #03081724; }
-  .card h2 { font-size: 11px; color: #a9bcdd; margin-bottom: 11px; font-weight: 800; letter-spacing: .09em; text-transform:uppercase; }
-  .row { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; font-size: 13px; }
-  .row label { color: #c3cde2; }
-  .row .val { color: #ffd166; font-variant-numeric: tabular-nums; }
-  input[type=range] { width: 130px; accent-color: #4da3ff; }
-  select, .btn {
-    background: #263858; color: #e8ecf4; border: 1px solid #42608f;
-    border-radius: 8px; padding: 5px 9px; font-size: 12px; cursor: pointer; transition: .18s ease;
-  }
-  .btn:hover { background: #36527f; border-color:#69b7ff; transform:translateY(-1px); }
-  .seg { display: flex; gap: 6px; }
-  .seg .btn.on { background: linear-gradient(135deg, #78c8ff, #4e91ff); border-color: #83cbff; color: #06121f; font-weight: 750; box-shadow:0 4px 14px #328dff40; }
-  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .stat { background: #101a2d; border:1px solid #253a5c; border-radius: 10px; padding: 9px 10px; }
-  .stat .k { font-size: 11px; color: #8a94ad; }
-  .stat .v { font-size: 18px; font-weight: 700; color: #7ce3b1; font-variant-numeric: tabular-nums;}
-  .stat .v.warn { color: #ffd166; }
-  .stat .v.bad { color: #ff7b7b; }
-  .legend { font-size: 12px; color: #8a94ad; line-height: 1.9; }
-  .dot { display:inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle;}
-  .toggleRow { display:flex; align-items:center; justify-content: space-between; font-size:13px; color:#c3cde2; }
-  .switch { position: relative; width: 40px; height: 22px; padding:0; border:0; background:#26314e; border-radius: 11px; cursor:pointer; transition:.2s; flex:none;}
-  .switch.on { background: #4da3ff; }
-  .switch::after { content:''; position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:#fff; transition:.2s;}
-  .switch.on::after { left: 21px; }
-  #toast {
-    position:absolute; left:50%; bottom:24px; transform:translateX(-50%);
-    background:rgba(20,28,48,.92); border:1px solid #3a4a72; padding:8px 16px;
-    border-radius:20px; font-size:13px; opacity:0; transition:opacity .3s; pointer-events:none;
-  }
-  .modelGrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .modelItem { background:#111a2f; border-radius:8px; padding:9px; min-height:62px; }
-  .modelItem b { display:block; color:#dce6fb; font-size:11px; margin-bottom:4px; }
-  .modelItem span { color:#8f9db8; font-size:10px; line-height:1.45; display:block; }
-  .notice { margin-top:9px; padding:8px 9px; border-left:2px solid #ffd166; background:#ffd1660c; color:#b8c4db; font-size:10px; line-height:1.55; }
-  .inputSmall { width:88px; background:#26314e; color:#e8ecf4; border:1px solid #3a4a72; border-radius:6px; padding:4px 7px; }
-  .btn.primary { background:#4da3ff; border-color:#4da3ff; color:#071321; font-weight:700; }
-  .btn.wide { width:100%; padding:8px 10px; }
-  .compareHead { display:flex; justify-content:space-between; gap:8px; color:#8291ad; font-size:10px; margin:8px 0 5px; }
-  .compareRow { display:grid; grid-template-columns:1.25fr .75fr .75fr; align-items:center; gap:8px; padding:6px 0; border-top:1px solid #2a3858; font-size:11px; }
-  .compareRow span:nth-child(n+2) { text-align:right; font-variant-numeric:tabular-nums; }
-  .deltaGood { color:#7ce3b1; }
-  .deltaBad { color:#ff8f8f; }
-  .fine { color:#7f8ca7; font-size:10px; line-height:1.55; }
-  .pill { display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:999px; background:#4da3ff18; color:#9ad3ff; border:1px solid #4da3ff55; font-size:10px; margin-top:10px; }
-  @media (max-width: 760px) {
-    body { overflow:auto; }
-    #app { min-height:100dvh; height:auto; flex-direction:column; }
-    #canvasWrap { height:52svh; min-height:340px; flex:none; }
-    #panel { width:100%; border-left:0; border-top:1px solid #30466a; overflow:visible; padding:16px; gap:10px; }
-    .card { padding:12px; }
-    h1 { font-size:21px; }
-    .row { margin:7px 0; }
-    input[type=range] { width:118px; }
-    .modelGrid { gap:6px; }
-    .modelItem { min-height:0; padding:8px; }
-  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root { color-scheme:dark; }
+  body { font-family:Inter,ui-sans-serif,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:#08111f; color:#eef5ff; overflow:hidden; }
+  button,input,select { font:inherit; }
+  #app { display:flex; min-height:100dvh; }
+  #canvasWrap { flex:1; min-width:0; position:relative; overflow:hidden; background:radial-gradient(circle at 35% 12%,#173d72 0%,#0d1b31 38%,#08111f 82%); }
+  #canvasWrap::before { content:""; position:absolute; inset:0; pointer-events:none; background-image:linear-gradient(rgba(157,202,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(157,202,255,.04) 1px,transparent 1px); background-size:36px 36px; }
+  canvas { display:block; }
+  #panel { width:380px; padding:22px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; background:#0d1728; border-left:1px solid #213655; box-shadow:-16px 0 40px #02071340; }
+  .eyebrow { color:#75c4ff; font-size:10px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+  h1 { margin-top:6px; font-size:25px; line-height:1.1; letter-spacing:-.045em; }
+  .subtitle { margin-top:8px; color:#9badc7; font-size:12px; line-height:1.5; }
+  .card { border:1px solid #203756; border-radius:16px; padding:15px; background:linear-gradient(145deg,#14233b,#101b2e); }
+  .card h2 { margin-bottom:13px; color:#a9c1df; font-size:10px; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:30px; font-size:12px; }
+  .row + .row { margin-top:9px; padding-top:9px; border-top:1px solid #203451; }
+  .row label { color:#c6d2e6; white-space:nowrap; }
+  .val { color:#ffd166; font-variant-numeric:tabular-nums; }
+  select,.btn { border:1px solid #385778; border-radius:8px; padding:6px 8px; color:#ecf5ff; background:#1c304d; font-size:12px; cursor:pointer; transition:.16s ease; }
+  select { max-width:190px; }
+  .btn:hover { border-color:#79c7ff; background:#29466d; }
+  .btn.primary { background:#68bcff; border-color:#68bcff; color:#071321; font-weight:800; }
+  .seg { display:flex; gap:4px; }
+  .seg .btn { padding:6px 8px; }
+  .seg .btn.on { color:#071321; background:#82cbff; border-color:#82cbff; font-weight:800; box-shadow:0 5px 14px #43a8ff35; }
+  input[type=range] { width:132px; accent-color:#72c6ff; }
+  .dash { padding:16px 14px 13px; }
+  .gauges { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+  .gauge { --p:0%; --accent:#79c7ff; aspect-ratio:1; position:relative; display:grid; place-items:center; border-radius:50%; background:conic-gradient(var(--accent) var(--p),#20334e 0); }
+  .gauge::before { content:""; position:absolute; inset:6px; border-radius:50%; background:#111e33; box-shadow:inset 0 0 0 1px #2a4262; }
+  .gauge > div { position:relative; z-index:1; text-align:center; }
+  .gauge strong { display:block; font-size:18px; line-height:1; font-variant-numeric:tabular-nums; }
+  .gauge span { display:block; margin-top:4px; color:#95a9c5; font-size:9px; }
+  .miniStats { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:13px; }
+  .mini { padding:8px 7px; border-radius:9px; background:#0d192b; border:1px solid #203651; }
+  .mini span { display:block; color:#8396b2; font-size:9px; }
+  .mini strong { display:block; margin-top:3px; color:#dce9fc; font-size:13px; font-variant-numeric:tabular-nums; }
+  .controls { display:flex; gap:8px; }
+  .controls .btn { flex:1; padding:9px; }
+  .hint { color:#8396b2; font-size:10px; line-height:1.5; }
+  #toast { position:absolute; left:50%; bottom:24px; transform:translateX(-50%); padding:8px 14px; border:1px solid #3b5879; border-radius:999px; background:rgba(15,28,48,.94); font-size:12px; opacity:0; transition:opacity .25s; pointer-events:none; }
+  @media (max-width:760px) { body { overflow:auto; } #app { min-height:100dvh; flex-direction:column; } #canvasWrap { height:49svh; min-height:320px; flex:none; } #panel { width:100%; overflow:visible; padding:16px; border-left:0; border-top:1px solid #213655; } h1 { font-size:23px; } .card { padding:14px; } }
 </style>
 </head>
 <body>
@@ -96,33 +54,27 @@
   <div id="canvasWrap"><canvas id="cv"></canvas><div id="toast"></div></div>
   <div id="panel">
     <header>
-      <div class="eyebrow">City2049 · Vertical Mobility · 教学型仿真</div>
-      <h1>电梯调度实验室<small>从一部普通电梯，观察到多部电梯的群控派梯。</small></h1>
-      <span class="pill">规则式启发式 · 随机离散时间仿真</span>
+      <div class="eyebrow">CITY2049 · VERTICAL MOBILITY</div>
+      <h1>电梯调度实验室</h1>
+      <p class="subtitle">实时观察多台电梯如何响应楼层呼叫，并平衡等待与运行效率。</p>
     </header>
 
-    <div class="card">
-      <h2>从生活场景到决策模型</h2>
-      <div class="modelGrid">
-        <div class="modelItem"><b>生活场景</b><span>办公楼乘客随机呼梯；单梯或多梯共同服务。</span></div>
-        <div class="modelItem"><b>核心决策</b><span>先服务哪些请求；多梯时由哪台车响应。</span></div>
-        <div class="modelItem"><b>评价目标</b><span>等待与全程时间更短，同时减少停靠与无效移动。</span></div>
-        <div class="modelItem"><b>主要约束</b><span>载客容量、速度与门时间固定、上下行方向一致。</span></div>
+    <div class="card dash">
+      <h2>运行仪表盘</h2>
+      <div class="gauges">
+        <div class="gauge" id="gWaiting" style="--accent:#ffd166"><div><strong id="stWaiting">0</strong><span>候梯人数</span></div></div>
+        <div class="gauge" id="gWait" style="--accent:#72c6ff"><div><strong id="stAvgWait">–</strong><span>平均等待 / s</span></div></div>
+        <div class="gauge" id="gDone" style="--accent:#7ce3b1"><div><strong id="stDone">0</strong><span>完成行程</span></div></div>
       </div>
-      <div class="notice">这不是全局最优求解器。电梯会对呼梯进行响应规划，但到站后，方向一致且未满载时，任何候梯乘客都可以上车。</div>
+      <div class="miniStats">
+        <div class="mini"><span>已上梯</span><strong id="stServed">0</strong></div>
+        <div class="mini"><span>最长等待</span><strong id="stMaxWait">–</strong></div>
+        <div class="mini"><span>仿真时间</span><strong id="stClock">00:00</strong></div>
+      </div>
     </div>
 
     <div class="card">
-      <h2>学习层级</h2>
-      <div class="seg" id="levelSeg">
-        <button class="btn" data-level="1">Level 1 · 单梯</button>
-        <button class="btn on" data-level="2">Level 2 · 群控</button>
-      </div>
-      <p class="fine" id="levelHint" style="margin-top:9px;">群控层级：比较多台电梯如何分配同一批楼层方向请求。</p>
-    </div>
-
-    <div class="card">
-      <h2>场景设置</h2>
+      <h2>仿真设置</h2>
       <div class="row"><label>电梯数量</label>
         <div class="seg" id="elevSeg">
           <button class="btn" data-n="1">1 台</button>
@@ -156,81 +108,19 @@
           <option value="16">大型 · 16 人 / 1250kg</option>
         </select>
       </div>
-      <div class="row"><label for="seed">随机种子</label><input class="inputSmall" id="seed" type="number" min="1" max="999999" value="2026"></div>
-    </div>
-
-    <div class="card">
-      <h2>调度偏好 <span id="policyName" style="color:#7ce3b1;font-size:11px;font-weight:500;">协同 ETA 派梯</span></h2>
-      <div class="row"><label>权重方案</label>
-        <div class="seg" id="objSeg">
-          <button class="btn on" data-n="wait">响应优先</button>
-          <button class="btn" data-n="eff">合乘优先</button>
-        </div>
-      </div>
-      <div style="font-size:11px;color:#8a94ad;margin-top:5px;line-height:1.5;" id="objHint">更重视呼梯响应时间；这是一种规则权重，不是数学目标函数求解。</div>
-    </div>
-
-    <div class="card">
-      <h2>策略开关</h2>
-      <div class="toggleRow" style="margin:8px 0;">
-        <span>协同 ETA 分配</span>
-        <button class="switch on" id="swCoop" type="button" role="switch" aria-checked="true" aria-label="协同 ETA 分配"></button>
-      </div>
-      <div class="toggleRow" style="margin:8px 0;">
-        <span>需求感知驻停</span>
-        <button class="switch on" id="swPark" type="button" role="switch" aria-checked="true" aria-label="需求感知驻停"></button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>仿真控制</h2>
       <div class="row"><label>时间倍速 <span class="val" id="speedVal">4×</span></label>
         <input type="range" id="speed" min="1" max="16" value="4">
       </div>
-      <div class="row">
+      <div class="controls" style="margin-top:14px;">
         <button class="btn" id="btnPause">⏸ 暂停</button>
-        <button class="btn" id="btnReset">↺ 重置</button>
+        <button class="btn primary" id="btnReset">↺ 重置仿真</button>
       </div>
     </div>
 
     <div class="card">
-      <h2>运行指标</h2>
-      <div class="stats">
-        <div class="stat"><div class="k">已上梯人数</div><div class="v" id="stServed">0</div></div>
-        <div class="stat"><div class="k">已完成行程</div><div class="v" id="stDone">0</div></div>
-        <div class="stat"><div class="k">当前候梯</div><div class="v warn" id="stWaiting">0</div></div>
-        <div class="stat"><div class="k">平均等待 (s)</div><div class="v" id="stAvgWait">–</div></div>
-        <div class="stat"><div class="k">最长等待 (s)</div><div class="v bad" id="stMaxWait">–</div></div>
-        <div class="stat"><div class="k">P95 等待 (s)</div><div class="v warn" id="stP95Wait">–</div></div>
-        <div class="stat"><div class="k">平均全程 (s)</div><div class="v" id="stAvgTrip">–</div></div>
-        <div class="stat"><div class="k">总停靠次数</div><div class="v warn" id="stStops">0</div></div>
-        <div class="stat"><div class="k">停靠/人</div><div class="v" id="stStopPer">–</div></div>
-        <div class="stat"><div class="k">总运行距离 (层)</div><div class="v" id="stDistance">0.0</div></div>
-        <div class="stat"><div class="k">仿真时间</div><div class="v" id="stClock">00:00</div></div>
-      </div>
+      <h2>读图提示</h2>
+      <p class="hint">黄色圆点是候梯乘客，旁边的 → 楼层表示目的地；绿色圆点表示轿厢内乘客。每台车都可接走方向一致且未满载的候梯者。</p>
     </div>
-
-    <div class="card">
-      <h2>公平基准对比</h2>
-      <p class="fine">用相同随机种子、相同客流样本分别运行 15 分钟；对照策略为“最近可达车 + 大厅驻停”。</p>
-      <button class="btn primary wide" id="btnCompare" style="margin-top:9px;">运行同样本 A/B 对比</button>
-      <div id="compareResult" hidden>
-        <div class="compareHead"><span>指标</span><span>协同策略</span><span>相对基准</span></div>
-        <div class="compareRow"><span>平均等待</span><span id="cmpWait">–</span><span id="cmpWaitDelta">–</span></div>
-        <div class="compareRow"><span>平均全程</span><span id="cmpTrip">–</span><span id="cmpTripDelta">–</span></div>
-        <div class="compareRow"><span>停靠 / 已上梯</span><span id="cmpStops">–</span><span id="cmpStopsDelta">–</span></div>
-        <div class="compareRow"><span>完成服务</span><span id="cmpDone">–</span><span id="cmpDoneDelta">–</span></div>
-      </div>
-    </div>
-
-    <div class="card legend">
-      <h2>图例</h2>
-      <span class="dot" style="background:#ffd166"></span>候梯乘客（旁边的 → 楼层是目标；不锁定某一台电梯）<br>
-      <span class="dot" style="background:#7ce3b1"></span>电梯内乘客（轿厢上方显示人数/容量和目标楼层）<br>
-      <span class="dot" style="background:#4da3ff"></span>楼层需求热度（左侧蓝条）<br>
-      电梯边框发光 = 正在执行空闲驻停移动
-    </div>
-    <p class="fine">结果仅对当前简化假设和随机样本有效，不代表真实楼宇控制系统性能或策略的全局最优性。</p>
   </div>
 </div>
 <script>
@@ -646,78 +536,19 @@ function fmtClock(t){
   return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 }
 function updateStats(){
+  const waiting = S.passengers.filter(p=>p.state==='wait').length;
+  const avg = a => a.length? (a.reduce((x,y)=>x+y,0)/a.length) : null;
+  const aw = avg(S.servedWaits);
+  const mx = S.servedWaits.length? Math.max(...S.servedWaits):null;
   document.getElementById('stServed').textContent = S.servedWaits.length;
   document.getElementById('stDone').textContent = S.servedTrips.length;
-  document.getElementById('stWaiting').textContent = S.passengers.filter(p=>p.state==='wait').length;
-  const avg = a => a.length? (a.reduce((x,y)=>x+y,0)/a.length) : null;
-  const aw = avg(S.servedWaits), at = avg(S.servedTrips);
-  const mx = S.servedWaits.length? Math.max(...S.servedWaits):null;
-  const p95 = S.servedWaits.length ? [...S.servedWaits].sort((a,b)=>a-b)[Math.max(0, Math.ceil(S.servedWaits.length*.95)-1)] : null;
+  document.getElementById('stWaiting').textContent = waiting;
   document.getElementById('stAvgWait').textContent = aw===null?'–':aw.toFixed(1);
   document.getElementById('stMaxWait').textContent = mx===null?'–':mx.toFixed(0);
-  document.getElementById('stP95Wait').textContent = p95===null?'–':p95.toFixed(1);
-  document.getElementById('stAvgTrip').textContent = at===null?'–':at.toFixed(1);
-  document.getElementById('stStops').textContent = S.totalStops;
-  document.getElementById('stStopPer').textContent = S.servedWaits.length? (S.totalStops/S.servedWaits.length).toFixed(2) : '–';
-  document.getElementById('stDistance').textContent = S.totalDistance.toFixed(1);
   document.getElementById('stClock').textContent = fmtClock(S.t);
-}
-
-/* ================= 同样本快速对照 ================= */
-function runFastScenario(policy){
-  const liveS = S;
-  const saved = { coop:P.coop, park:P.park, speed:P.speed };
-  P.coop = policy==='coop';
-  P.park = true;
-  P.speed = 1;
-  reset();
-  const horizon = 15*60, dt = 0.2;
-  for(let tick=0; tick<horizon/dt; tick++){
-    S.t += dt;
-    const decay = Math.pow(0.5, dt/60);
-    for(let i=0;i<S.floorDemand.length;i++) S.floorDemand[i]*=decay;
-    spawn(dt);
-    S.sinceReassign += dt;
-    const reEvery = P.objective==='eff' ? P.reassignEvery*1.6 : P.reassignEvery;
-    if(S.sinceReassign>=reEvery){ S.sinceReassign=0; reassign(); }
-    for(const e of S.elevators) stepElevator(e, dt);
-  }
-  const mean = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0;
-  const out = {
-    wait:mean(S.servedWaits), trip:mean(S.servedTrips),
-    stopsPer:S.servedWaits.length ? S.totalStops/S.servedWaits.length : 0,
-    done:S.servedTrips.length, arrived:S.arrivedTotal
-  };
-  P.coop=saved.coop; P.park=saved.park; P.speed=saved.speed; S=liveS;
-  return out;
-}
-
-function setDelta(id, candidate, baseline, higherIsBetter=false){
-  const el=document.getElementById(id);
-  const pct=baseline ? (candidate/baseline-1)*100 : 0;
-  el.textContent=(pct>0?'+':'')+pct.toFixed(1)+'%';
-  const better=higherIsBetter ? pct>=0 : pct<=0;
-  el.className=better?'deltaGood':'deltaBad';
-}
-
-function runComparison(){
-  const btn=document.getElementById('btnCompare');
-  btn.disabled=true; btn.textContent='正在复现实验…';
-  requestAnimationFrame(()=>{
-    const candidate=runFastScenario('coop');
-    const baseline=runFastScenario('baseline');
-    document.getElementById('cmpWait').textContent=candidate.wait.toFixed(1)+' s';
-    document.getElementById('cmpTrip').textContent=candidate.trip.toFixed(1)+' s';
-    document.getElementById('cmpStops').textContent=candidate.stopsPer.toFixed(2);
-    document.getElementById('cmpDone').textContent=candidate.done+' / '+candidate.arrived;
-    setDelta('cmpWaitDelta',candidate.wait,baseline.wait);
-    setDelta('cmpTripDelta',candidate.trip,baseline.trip);
-    setDelta('cmpStopsDelta',candidate.stopsPer,baseline.stopsPer);
-    setDelta('cmpDoneDelta',candidate.done,baseline.done,true);
-    document.getElementById('compareResult').hidden=false;
-    btn.disabled=false; btn.textContent='重新运行同样本 A/B 对比';
-    toast('对照完成：同一客流样本，分别独立运行');
-  });
+  document.getElementById('gWaiting').style.setProperty('--p', Math.min(100, waiting*12)+'%');
+  document.getElementById('gWait').style.setProperty('--p', aw===null ? '0%' : Math.min(100, aw/0.6)+'%');
+  document.getElementById('gDone').style.setProperty('--p', Math.min(100, S.servedTrips.length*5)+'%');
 }
 
 /* ================= UI ================= */
@@ -727,39 +558,10 @@ const toast = (msg)=>{
   clearTimeout(el._t); el._t = setTimeout(()=>el.style.opacity=0, 1600);
 };
 function syncLevelUI(){
-  const single = P.nElev === 1;
-  P.level = single ? 1 : 2;
-  document.querySelectorAll('#levelSeg [data-level]').forEach(b=>b.classList.toggle('on', +b.dataset.level===P.level));
   document.querySelectorAll('#elevSeg [data-n]').forEach(b=>b.classList.toggle('on', +b.dataset.n===P.nElev));
-  document.getElementById('levelHint').textContent = single
-    ? '单梯层级：一部电梯按当前运行方向扫描楼层；重点观察容量、停靠和等待。'
-    : '群控层级：多台电梯共同响应楼层方向请求；重点观察派梯与驻停规则。';
-  document.getElementById('policyName').textContent = single ? '最近请求 + 方向扫描' : (P.coop ? '协同 ETA 派梯' : '最近可达车');
-  const coopSwitch = document.getElementById('swCoop');
-  coopSwitch.disabled = single;
-  coopSwitch.style.opacity = single ? '.45' : '1';
-  coopSwitch.setAttribute('aria-disabled', String(single));
-  coopSwitch.classList.toggle('on', P.coop);
-  coopSwitch.setAttribute('aria-checked', String(P.coop));
-  const parkSwitch = document.getElementById('swPark');
-  parkSwitch.disabled = single;
-  parkSwitch.style.opacity = single ? '.45' : '1';
-  parkSwitch.setAttribute('aria-disabled', String(single));
-  parkSwitch.classList.toggle('on', P.park);
-  parkSwitch.setAttribute('aria-checked', String(P.park));
-  document.querySelectorAll('#objSeg button').forEach(b=>{ b.disabled=single; b.style.opacity=single ? '.45' : '1'; });
 }
-document.getElementById('levelSeg').addEventListener('click', e=>{
-  if(!e.target.dataset.level) return;
-  P.nElev = +e.target.dataset.level === 1 ? 1 : 2;
-  if(P.nElev===1){ P.coop=false; P.park=false; P.objective='wait'; }
-  else { P.coop=true; P.park=true; }
-  reset(); syncLevelUI(); toast(P.level===1 ? '已进入 Level 1：单部普通电梯' : '已进入 Level 2：多电梯群控');
-});
 document.getElementById('elevSeg').addEventListener('click', e=>{
   if(e.target.dataset.n){ P.nElev = +e.target.dataset.n;
-    if(P.nElev===1){ P.coop=false; P.park=false; P.objective='wait'; }
-    else if(P.level===1){ P.coop=true; P.park=true; }
     reset(); syncLevelUI(); toast('已切换为 '+P.nElev+' 台电梯'); }
 });
 document.getElementById('floorSeg').addEventListener('click', e=>{
@@ -777,42 +579,15 @@ document.getElementById('capacity').addEventListener('input', e=>{
   P.capacity = +e.target.value;
 });
 document.getElementById('capacity').addEventListener('change', ()=>{ reset(); toast('已切换轿厢规格并重置'); });
-document.getElementById('seed').addEventListener('change', e=>{
-  P.seed = Math.max(1, Math.min(999999, +e.target.value || 2026));
-  e.target.value = P.seed;
-  reset(); toast('已用随机种子 '+P.seed+' 重置');
-});
 document.getElementById('speed').addEventListener('input', e=>{
   P.speed = +e.target.value;
   document.getElementById('speedVal').textContent = P.speed+'×';
-});
-document.getElementById('objSeg').addEventListener('click', e=>{
-  if(e.target.dataset.n){ P.objective = e.target.dataset.n;
-    [...e.currentTarget.children].forEach(b=>b.classList.toggle('on', b===e.target));
-    document.getElementById('objHint').textContent = P.objective==='wait'
-      ? '更重视呼梯响应时间；这是一种规则权重，不是数学目标函数求解。'
-      : '提高顺路拼单与新增停靠惩罚，尝试降低停靠/人。';
-    toast(P.objective==='wait'?'策略偏好：响应优先':'策略偏好：合乘优先'); }
-});
-document.getElementById('swCoop').addEventListener('click', e=>{
-  if(P.nElev===1) return;
-  P.coop = !P.coop; e.target.classList.toggle('on', P.coop);
-  e.target.setAttribute('aria-checked', String(P.coop));
-  syncLevelUI();
-  toast(P.coop?'协同 ETA：开':'协同 ETA：关（对照：最近可达车）');
-});
-document.getElementById('swPark').addEventListener('click', e=>{
-  if(P.nElev===1) return;
-  P.park = !P.park; e.target.classList.toggle('on', P.park);
-  e.target.setAttribute('aria-checked', String(P.park));
-  toast(P.park?'需求感知驻停：开':'需求感知驻停：关');
 });
 document.getElementById('btnPause').addEventListener('click', e=>{
   S.paused = !S.paused;
   e.target.textContent = S.paused ? '▶ 继续' : '⏸ 暂停';
 });
 document.getElementById('btnReset').addEventListener('click', ()=>{ reset(); toast('已重置'); });
-document.getElementById('btnCompare').addEventListener('click', runComparison);
 
 reset();
 syncLevelUI();
