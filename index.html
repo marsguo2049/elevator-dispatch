@@ -45,6 +45,7 @@
   .controls { display:flex; gap:8px; }
   .controls .btn { flex:1; padding:9px; }
   .hint { color:#8396b2; font-size:10px; line-height:1.5; }
+  .objectiveNote { margin-top:10px; color:#8fa5c3; font-size:10px; line-height:1.55; }
   #toast { position:absolute; left:50%; bottom:24px; transform:translateX(-50%); padding:8px 14px; border:1px solid #3b5879; border-radius:999px; background:rgba(15,28,48,.94); font-size:12px; opacity:0; transition:opacity .25s; pointer-events:none; }
   @media (max-width:760px) { body { overflow:auto; } #app { min-height:100dvh; flex-direction:column; } #canvasWrap { height:49svh; min-height:320px; flex:none; } #panel { width:100%; overflow:visible; padding:16px; border-left:0; border-top:1px solid #213655; } h1 { font-size:23px; } .card { padding:14px; } }
 </style>
@@ -96,6 +97,13 @@
           <option value="lunch">午间双向</option>
         </select>
       </div>
+      <div class="row"><label>调度目标</label>
+        <div class="seg" id="objSeg">
+          <button class="btn on" data-n="wait">响应优先</button>
+          <button class="btn" data-n="eff">节能优先</button>
+        </div>
+      </div>
+      <p class="objectiveNote" id="objHint">优先缩短乘客等待时间，电梯会更积极地响应新的呼叫。</p>
       <div class="row"><label>到达率 <span class="val" id="rateVal">6 人/分</span></label>
         <input type="range" id="rate" min="1" max="20" value="6">
       </div>
@@ -524,10 +532,10 @@ function draw(){
     ctx.fillText(ps.length+'人 最长'+oldest.toFixed(0)+'s', startX + Math.min(ps.length,8)*40 + 6, y-4);
   }
 
-  ctx.fillStyle = '#5f6b85';
+  ctx.fillStyle = '#9badc7';
   ctx.font = '12px sans-serif';
-  const modeTxt = {random:'日常 80% 大厅往返',morning:'早高峰上行',evening:'晚高峰下行',lunch:'午间双向'}[P.pattern];
-  ctx.fillText(P.nElev+'台电梯 · '+F+'层 · '+modeTxt+' · '+(P.objective==='wait'?'响应优先':'合乘优先')+' · '+(P.coop?'协同 ETA':'最近可达车(对照)')+' · 需求驻停'+(P.park?'开':'关')+' · seed '+P.seed, 30, 18);
+  const goalTxt = P.objective==='wait' ? '快速响应' : '节能少跑';
+  ctx.fillText(P.nElev+' 台电梯 · '+F+' 层 · 当前目标：'+goalTxt, 30, 18);
 }
 
 /* ================= 统计 ================= */
@@ -570,6 +578,16 @@ document.getElementById('floorSeg').addEventListener('click', e=>{
     reset(); toast('已切换为 '+P.floors+' 层'); }
 });
 document.getElementById('pattern').addEventListener('change', e=>{ P.pattern=e.target.value; reset(); toast('已重置为：'+e.target.selectedOptions[0].text); });
+document.getElementById('objSeg').addEventListener('click', e=>{
+  if(!e.target.dataset.n) return;
+  P.objective = e.target.dataset.n;
+  [...e.currentTarget.children].forEach(b=>b.classList.toggle('on', b===e.target));
+  const energy = P.objective==='eff';
+  document.getElementById('objHint').textContent = energy
+    ? '尽量合并顺路请求，并减少停靠与空载移动；乘客可能会多等一会。'
+    : '优先缩短乘客等待时间，电梯会更积极地响应新的呼叫。';
+  toast(energy ? '调度目标：节能优先' : '调度目标：响应优先');
+});
 document.getElementById('rate').addEventListener('input', e=>{
   P.ratePerMin = +e.target.value;
   document.getElementById('rateVal').textContent = P.ratePerMin+' 人/分';
