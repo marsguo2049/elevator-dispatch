@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>多电梯协同调度实验室 · Everyday OR</title>
+<title>电梯调度实验室 · City2049 Vertical Mobility</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root { color-scheme: dark; }
@@ -82,16 +82,16 @@
   <div id="canvasWrap"><canvas id="cv"></canvas><div id="toast"></div></div>
   <div id="panel">
     <header>
-      <div class="eyebrow">Everyday OR · 教学型仿真</div>
-      <h1>多电梯协同调度实验室<small>观察派梯规则如何改变等待时间与系统停靠成本</small></h1>
+      <div class="eyebrow">City2049 · Vertical Mobility · 教学型仿真</div>
+      <h1>电梯调度实验室<small>从一部普通电梯，观察到多部电梯的群控派梯。</small></h1>
       <span class="pill">规则式启发式 · 随机离散时间仿真</span>
     </header>
 
     <div class="card">
       <h2>从生活场景到决策模型</h2>
       <div class="modelGrid">
-        <div class="modelItem"><b>生活场景</b><span>办公楼乘客随机呼梯，多台电梯共享任务。</span></div>
-        <div class="modelItem"><b>核心决策</b><span>每个楼层方向请求分给哪台电梯；空闲车停在哪里。</span></div>
+        <div class="modelItem"><b>生活场景</b><span>办公楼乘客随机呼梯；单梯或多梯共同服务。</span></div>
+        <div class="modelItem"><b>核心决策</b><span>先服务哪些请求；多梯时由哪台车响应。</span></div>
         <div class="modelItem"><b>评价目标</b><span>等待与全程时间更短，同时减少停靠与无效移动。</span></div>
         <div class="modelItem"><b>主要约束</b><span>载客 8 人、速度与门时间固定、上下行方向一致。</span></div>
       </div>
@@ -99,9 +99,19 @@
     </div>
 
     <div class="card">
+      <h2>学习层级</h2>
+      <div class="seg" id="levelSeg">
+        <button class="btn" data-level="1">Level 1 · 单梯</button>
+        <button class="btn on" data-level="2">Level 2 · 群控</button>
+      </div>
+      <p class="fine" id="levelHint" style="margin-top:9px;">群控层级：比较多台电梯如何分配同一批楼层方向请求。</p>
+    </div>
+
+    <div class="card">
       <h2>场景设置</h2>
       <div class="row"><label>电梯数量</label>
         <div class="seg" id="elevSeg">
+          <button class="btn" data-n="1">1 台</button>
           <button class="btn on" data-n="2">2 台</button>
           <button class="btn" data-n="4">4 台</button>
         </div>
@@ -127,7 +137,7 @@
     </div>
 
     <div class="card">
-      <h2>调度偏好</h2>
+      <h2>调度偏好 <span id="policyName" style="color:#7ce3b1;font-size:11px;font-weight:500;">协同 ETA 派梯</span></h2>
       <div class="row"><label>权重方案</label>
         <div class="seg" id="objSeg">
           <button class="btn on" data-n="wait">响应优先</button>
@@ -164,12 +174,15 @@
       <h2>运行指标</h2>
       <div class="stats">
         <div class="stat"><div class="k">已上梯人数</div><div class="v" id="stServed">0</div></div>
+        <div class="stat"><div class="k">已完成行程</div><div class="v" id="stDone">0</div></div>
         <div class="stat"><div class="k">当前候梯</div><div class="v warn" id="stWaiting">0</div></div>
         <div class="stat"><div class="k">平均等待 (s)</div><div class="v" id="stAvgWait">–</div></div>
         <div class="stat"><div class="k">最长等待 (s)</div><div class="v bad" id="stMaxWait">–</div></div>
+        <div class="stat"><div class="k">P95 等待 (s)</div><div class="v warn" id="stP95Wait">–</div></div>
         <div class="stat"><div class="k">平均全程 (s)</div><div class="v" id="stAvgTrip">–</div></div>
         <div class="stat"><div class="k">总停靠次数</div><div class="v warn" id="stStops">0</div></div>
         <div class="stat"><div class="k">停靠/人</div><div class="v" id="stStopPer">–</div></div>
+        <div class="stat"><div class="k">总运行距离 (层)</div><div class="v" id="stDistance">0.0</div></div>
         <div class="stat"><div class="k">仿真时间</div><div class="v" id="stClock">00:00</div></div>
       </div>
     </div>
@@ -201,7 +214,7 @@
 "use strict";
 /* ================= 参数 ================= */
 const P = {
-  floors: 14, nElev: 2, pattern: 'random',
+  floors: 14, nElev: 2, pattern: 'random', level: 2,
   ratePerMin: 6, speed: 4, seed: 2026,
   coop: true, park: true, objective: 'wait',
   floorH: 0, shaftW: 54, lobbyPad: 46, topPad: 30,
@@ -243,13 +256,13 @@ function reset(){
     t: 0, paused: false,
     elevators: [], passengers: [], nextPid: 1,
     sinceReassign: 0, rng, nextArrival: expGap(rng, P.ratePerMin),
-    servedWaits: [], servedTrips: [], totalStops: 0,
+    servedWaits: [], servedTrips: [], totalStops: 0, totalDistance: 0,
     floorDemand: new Array(P.floors).fill(0),
     arrivedTotal: 0,
   };
   for(let i=0;i<P.nElev;i++){
     S.elevators.push({
-      id:i, y: 1, dir: 0,
+      id:i, y: P.nElev === 1 ? 1 : Math.max(1, Math.round(1 + i * (P.floors - 1) / Math.max(1, P.nElev - 1))), dir: 0,
       targets: new Set(), riders: [],
       state: 'idle', doorT: 0, idleT: 0, parkTarget: null, parking: false,
     });
@@ -355,8 +368,10 @@ function reassign(){
 function moveToward(e, target, dt){
   const step = P.elevSpeed * dt;
   const d = target - e.y;
+  const from = e.y;
   if(Math.abs(d) <= step) e.y = target;
   else e.y += Math.sign(d)*step;
+  S.totalDistance += Math.abs(e.y - from);
 }
 
 function stepElevator(e, dt){
@@ -434,6 +449,9 @@ function arrive(e, floor){
     }
     const left = S.passengers.filter(p=>p.state==='wait' && p.o===floor && p.assigned===e.id);
     for(const p of left) p.assigned = -1;
+  } else {
+    // 该车本次运行方向无法接走的乘客必须释放，避免呼梯被错误占用。
+    for(const p of candidates) p.assigned = -1;
   }
   e.targets.delete(floor);
   if(acted){ e.state='door'; e.doorT=P.doorTime; S.totalStops++; }
@@ -570,15 +588,19 @@ function fmtClock(t){
 }
 function updateStats(){
   document.getElementById('stServed').textContent = S.servedWaits.length;
+  document.getElementById('stDone').textContent = S.servedTrips.length;
   document.getElementById('stWaiting').textContent = S.passengers.filter(p=>p.state==='wait').length;
   const avg = a => a.length? (a.reduce((x,y)=>x+y,0)/a.length) : null;
   const aw = avg(S.servedWaits), at = avg(S.servedTrips);
   const mx = S.servedWaits.length? Math.max(...S.servedWaits):null;
+  const p95 = S.servedWaits.length ? [...S.servedWaits].sort((a,b)=>a-b)[Math.max(0, Math.ceil(S.servedWaits.length*.95)-1)] : null;
   document.getElementById('stAvgWait').textContent = aw===null?'–':aw.toFixed(1);
   document.getElementById('stMaxWait').textContent = mx===null?'–':mx.toFixed(0);
+  document.getElementById('stP95Wait').textContent = p95===null?'–':p95.toFixed(1);
   document.getElementById('stAvgTrip').textContent = at===null?'–':at.toFixed(1);
   document.getElementById('stStops').textContent = S.totalStops;
   document.getElementById('stStopPer').textContent = S.servedWaits.length? (S.totalStops/S.servedWaits.length).toFixed(2) : '–';
+  document.getElementById('stDistance').textContent = S.totalDistance.toFixed(1);
   document.getElementById('stClock').textContent = fmtClock(S.t);
 }
 
@@ -645,21 +667,53 @@ const toast = (msg)=>{
   el.textContent = msg; el.style.opacity = 1;
   clearTimeout(el._t); el._t = setTimeout(()=>el.style.opacity=0, 1600);
 };
+function syncLevelUI(){
+  const single = P.nElev === 1;
+  P.level = single ? 1 : 2;
+  document.querySelectorAll('#levelSeg [data-level]').forEach(b=>b.classList.toggle('on', +b.dataset.level===P.level));
+  document.querySelectorAll('#elevSeg [data-n]').forEach(b=>b.classList.toggle('on', +b.dataset.n===P.nElev));
+  document.getElementById('levelHint').textContent = single
+    ? '单梯层级：一部电梯按当前运行方向扫描楼层；重点观察容量、停靠和等待。'
+    : '群控层级：多台电梯共同响应楼层方向请求；重点观察派梯与驻停规则。';
+  document.getElementById('policyName').textContent = single ? '最近请求 + 方向扫描' : (P.coop ? '协同 ETA 派梯' : '最近可达车');
+  const coopSwitch = document.getElementById('swCoop');
+  coopSwitch.disabled = single;
+  coopSwitch.style.opacity = single ? '.45' : '1';
+  coopSwitch.setAttribute('aria-disabled', String(single));
+  coopSwitch.classList.toggle('on', P.coop);
+  coopSwitch.setAttribute('aria-checked', String(P.coop));
+  const parkSwitch = document.getElementById('swPark');
+  parkSwitch.disabled = single;
+  parkSwitch.style.opacity = single ? '.45' : '1';
+  parkSwitch.setAttribute('aria-disabled', String(single));
+  parkSwitch.classList.toggle('on', P.park);
+  parkSwitch.setAttribute('aria-checked', String(P.park));
+  document.querySelectorAll('#objSeg button').forEach(b=>{ b.disabled=single; b.style.opacity=single ? '.45' : '1'; });
+}
+document.getElementById('levelSeg').addEventListener('click', e=>{
+  if(!e.target.dataset.level) return;
+  P.nElev = +e.target.dataset.level === 1 ? 1 : 2;
+  if(P.nElev===1){ P.coop=false; P.park=false; P.objective='wait'; }
+  else { P.coop=true; P.park=true; }
+  reset(); syncLevelUI(); toast(P.level===1 ? '已进入 Level 1：单部普通电梯' : '已进入 Level 2：多电梯群控');
+});
 document.getElementById('elevSeg').addEventListener('click', e=>{
   if(e.target.dataset.n){ P.nElev = +e.target.dataset.n;
-    [...e.currentTarget.children].forEach(b=>b.classList.toggle('on', b===e.target));
-    reset(); toast('已切换为 '+P.nElev+' 台电梯'); }
+    if(P.nElev===1){ P.coop=false; P.park=false; P.objective='wait'; }
+    else if(P.level===1){ P.coop=true; P.park=true; }
+    reset(); syncLevelUI(); toast('已切换为 '+P.nElev+' 台电梯'); }
 });
 document.getElementById('floorSeg').addEventListener('click', e=>{
   if(e.target.dataset.n){ P.floors = +e.target.dataset.n;
     [...e.currentTarget.children].forEach(b=>b.classList.toggle('on', b===e.target));
     reset(); toast('已切换为 '+P.floors+' 层'); }
 });
-document.getElementById('pattern').addEventListener('change', e=>{ P.pattern=e.target.value; toast('客流模式：'+e.target.selectedOptions[0].text); });
+document.getElementById('pattern').addEventListener('change', e=>{ P.pattern=e.target.value; reset(); toast('已重置为：'+e.target.selectedOptions[0].text); });
 document.getElementById('rate').addEventListener('input', e=>{
   P.ratePerMin = +e.target.value;
   document.getElementById('rateVal').textContent = P.ratePerMin+' 人/分';
 });
+document.getElementById('rate').addEventListener('change', ()=>{ reset(); toast('已用新的到达率重置'); });
 document.getElementById('seed').addEventListener('change', e=>{
   P.seed = Math.max(1, Math.min(999999, +e.target.value || 2026));
   e.target.value = P.seed;
@@ -678,11 +732,14 @@ document.getElementById('objSeg').addEventListener('click', e=>{
     toast(P.objective==='wait'?'策略偏好：响应优先':'策略偏好：合乘优先'); }
 });
 document.getElementById('swCoop').addEventListener('click', e=>{
+  if(P.nElev===1) return;
   P.coop = !P.coop; e.target.classList.toggle('on', P.coop);
   e.target.setAttribute('aria-checked', String(P.coop));
+  syncLevelUI();
   toast(P.coop?'协同 ETA：开':'协同 ETA：关（对照：最近可达车）');
 });
 document.getElementById('swPark').addEventListener('click', e=>{
+  if(P.nElev===1) return;
   P.park = !P.park; e.target.classList.toggle('on', P.park);
   e.target.setAttribute('aria-checked', String(P.park));
   toast(P.park?'需求感知驻停：开':'需求感知驻停：关');
@@ -695,6 +752,7 @@ document.getElementById('btnReset').addEventListener('click', ()=>{ reset(); toa
 document.getElementById('btnCompare').addEventListener('click', runComparison);
 
 reset();
+syncLevelUI();
 requestAnimationFrame(loop);
 </script>
 </body>
